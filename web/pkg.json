@@ -1,0 +1,46 @@
+{
+  "name": "operation-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "PORT=13900 next dev --turbopack",
+    "build": "next build",
+    "start": "PORT=13900 next start",
+    "lint": "next lint",
+    "publish": "bash build.sh"
+  },
+  "dependencies": {
+    "@ant-design/nextjs-registry": "^1.0.2",
+    "@ant-design/plots": "^2.3.3",
+    "@tanstack/query-core": "^5.74.4",
+    "@tanstack/react-query": "^5.74.4",
+    "antd": "^5.24.7",
+    "clsx": "^2.1.1",
+    "dayjs": "^1.11.13",
+    "dayjs-plugin-utc": "^0.1.2",
+    "dayjs-timezone-iana-plugin": "^0.1.0",
+    "decimal.js": "^10.5.0",
+    "file-saver": "^2.0.5",
+    "jotai": "^2.12.3",
+    "jotai-tanstack-query": "^0.9.0",
+    "mysql2": "^3.14.0",
+    "next": "15.3.0",
+    "pg-hstore": "^2.3.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sequelize": "^6.37.7"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/decimal.js": "^0.0.32",
+    "@types/file-saver": "^2.0.7",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
