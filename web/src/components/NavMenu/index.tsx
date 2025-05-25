@@ -7,20 +7,13 @@ import { usePathname } from 'next/navigation';
 type Props = {
   route: Record<string, string>;
 };
+
 const NavMenu = (props: Props) => {
   const pathname = usePathname();
   const items = Object.entries(props.route).map(([path, label]) => {
     return {
       key: path,
-      label: (
-        <Link
-          href={{
-            pathname: path
-          }}
-        >
-          {label}
-        </Link>
-      )
+      label: <Link href={{ pathname: path }}>{label}</Link>
     };
   });
   return (
