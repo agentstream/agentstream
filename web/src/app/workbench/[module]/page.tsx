@@ -12,8 +12,8 @@ export default function Page({ params }: { params: Promise<{ module: Module }> }
   const [activeKey, setKey] = useState(TabItem.Overview);
   const onChange = (key: string) => setKey(key as TabItem);
   return (
-    <Tabs activeKey={activeKey} onChange={onChange} type="card">
-      <Tabs.TabPane key={TabItem.Overview} tab="Overview">
+    <Tabs activeKey={activeKey} onChange={onChange} type="card" className="h-full">
+      <Tabs.TabPane key={TabItem.Overview} tab="Overview" className="bg-gray-bg">
         <Overview module={module} />
       </Tabs.TabPane>
       <Tabs.TabPane key={TabItem.Message} tab="Message">
