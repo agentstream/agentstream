@@ -8,7 +8,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 type Props = {
-  id: string;
+  displayId: string;
+  queryId: string;
   name: string;
   description: string;
   logo: string;
@@ -16,14 +17,14 @@ type Props = {
 };
 
 const ToolCard = (props: Props) => {
-  const [showIcon, setShowIcon] = useState(false);
+  const [showIcon, setShowIcon] = useState(props.logo === '');
   function handleError() {
     setShowIcon(true);
     return false;
   }
   const router = useRouter();
   function handleClick() {
-    router.push(routePathOfDetailPage(props.type, props.id));
+    router.push(routePathOfDetailPage(props.type, props.queryId));
   }
   return (
     <Card className="w-65 h-35" variant="borderless">
@@ -41,7 +42,7 @@ const ToolCard = (props: Props) => {
             />
           }
           title={props.name}
-          description={props.id}
+          description={props.displayId}
         />
         {props.description}
       </Space>
