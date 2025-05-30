@@ -1,11 +1,12 @@
-import { RoutePath } from '@/common/enum';
+import { Module } from '@/common/enum';
+import { routePathOfModuleOverview } from '@/common/utils';
 import NavBar from '@/components/NavBar';
 import NavMenu from '@/components/NavMenu';
 
 const routes = {
-  [RoutePath.Package]: 'Package',
-  [RoutePath.Function]: 'Function',
-  [RoutePath.Agent]: 'Agent'
+  [routePathOfModuleOverview(Module.Package)]: 'Package',
+  [routePathOfModuleOverview(Module.Function)]: 'Function',
+  [routePathOfModuleOverview(Module.Agent)]: 'Agent'
 };
 
 export default function PageLayout({

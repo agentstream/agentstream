@@ -1,25 +1,52 @@
 'use client';
 
-import { Card, Image } from 'antd';
+import { Module } from '@/common/enum';
+import { routePathOfDetailPage } from '@/common/utils';
+import { QuestionCircleTwoTone } from '@ant-design/icons';
+import { Avatar, Card, Space } from 'antd';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 type Props = {
+  id: string;
   name: string;
   description: string;
   logo: string;
+  type: Module;
 };
+
 const ToolCard = (props: Props) => {
+  const [showIcon, setShowIcon] = useState(false);
+  function handleError() {
+    setShowIcon(true);
+    return false;
+  }
+  const router = useRouter();
+  function handleClick() {
+    router.push(routePathOfDetailPage(props.type, props.id));
+  }
   return (
-    <Card
-      cover={
-        <div className="px-5 pt-5 h-20">
-          <Image alt="logo" src={props.logo} preview={false} />
-        </div>
-      }
-      className="w-63 h-42"
-      variant="borderless"
-    >
-      <Card.Meta title={props.name} description={props.description} />
+    <Card className="w-65 h-35" variant="borderless">
+      <Space direction="vertical">
+        <Card.Meta
+          avatar={
+            <Avatar
+              src={showIcon ? undefined : props.logo}
+              shape="square"
+              size="large"
+              icon={<QuestionCircleTwoTone />}
+              onError={handleError}
+              onClick={handleClick}
+              className="hover:cursor-pointer"
+            />
+          }
+          title={props.name}
+          description={props.id}
+        />
+        {props.description}
+      </Space>
     </Card>
   );
 };
+
 export default ToolCard;
