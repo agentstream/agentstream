@@ -7,7 +7,7 @@ export function routePathOfModuleOverview(module: Module): string {
 }
 
 export function routePathOfDetailPage(module: Module, id: string): string {
-    return `${routePathOfModuleOverview(module)}/detail/${id}`
+    return `${routePathOfModuleOverview(module)}/${id}`
 }
 
 export function serializeToJSON<T>(value: T): SerializedJSON<T> {
