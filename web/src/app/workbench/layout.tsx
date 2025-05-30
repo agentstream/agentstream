@@ -2,6 +2,7 @@ import { Module } from '@/common/enum';
 import { routePathOfModuleOverview } from '@/common/utils';
 import NavBar from '@/components/NavBar';
 import NavMenu from '@/components/NavMenu';
+import QueryContext from '@/contexts/QueryContext';
 
 const routes = {
   [routePathOfModuleOverview(Module.Package)]: 'Package',
@@ -23,7 +24,9 @@ export default function PageLayout({
         <aside className="h-full w-1/6 min-w-25">
           <NavMenu route={routes} />
         </aside>
-        <main className="w-full h-full overflow-auto">{children}</main>
+        <main className="w-full h-full overflow-auto">
+          <QueryContext>{children}</QueryContext>
+        </main>
       </main>
     </div>
   );
