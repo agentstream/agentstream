@@ -16,9 +16,9 @@ type Props = {
 };
 
 const ToolCard = (props: Props) => {
-  const [showIcon, setShowIcon] = useState(props.logo === '');
+  const [showPlaceHolder, setShowPlaceHolder] = useState(props.logo === '');
   function handleError() {
-    setShowIcon(true);
+    setShowPlaceHolder(true);
     return false;
   }
   const router = useRouter();
@@ -31,7 +31,7 @@ const ToolCard = (props: Props) => {
         <Card.Meta
           avatar={
             <Avatar
-              src={showIcon ? undefined : props.logo}
+              src={showPlaceHolder ? undefined : props.logo}
               shape="square"
               size="large"
               icon={<QuestionCircleTwoTone />}

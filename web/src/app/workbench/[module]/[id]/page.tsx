@@ -1,13 +1,15 @@
 'use client';
 
 import { Module } from '@/common/enum';
+import DetailCard from '@/components/common/DetailCard';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
-import { usePath } from '@/hooks';
+import ModuleCard from '@/components/common/ModuleCard';
 import { getAgentDetails } from '@/server/actions/agent';
 import { getFunctionDetails } from '@/server/actions/function';
 import { getPackageDetails } from '@/server/actions/package';
 import { useQuery } from '@tanstack/react-query';
-import { Skeleton } from 'antd';
+import { Skeleton, Space, Typography } from 'antd';
+import { usePathname } from 'next/navigation';
 import { use } from 'react';
 
 const fetchAction = {
@@ -19,8 +21,7 @@ const fetchAction = {
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [namespace, name] = decodeURIComponent(id).split('/');
-  const mod = usePath(2) as Module;
-  console.log(mod);
+  const mod = usePathname().split('/')[2] as Module;
   const { data, isPending, isError } = useQuery({
     queryKey: [mod, id],
     queryFn: () => fetchAction[mod](namespace, name)
@@ -32,7 +33,26 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       ) : isError ? (
         <EmptyPlaceHolder />
       ) : data ? (
-        <div></div>
+        <Space direction="vertical">
+          <DetailCard
+            id={`${data.metadata.namespace}/${data.metadata.name}`}
+            name={`${data.spec.displayName || data.metadata.name}`}
+            description={data.spec.description}
+            logo={data.spec.logo}
+            image={data.spec.functionType.cloud.image}
+          />
+          <Typography.Title level={3}>Modules</Typography.Title>
+          {Object.entries(data.spec.modules).map(([k, v]) => (
+            <div className="float-left p-2" key={k}>
+              <ModuleCard
+                name={v.displayName}
+                description={v.description}
+                sourceSchema={v.sourceSchema}
+                sinkSchema={v.sinkSchema}
+              />
+            </div>
+          ))}
+        </Space>
       ) : (
         <EmptyPlaceHolder />
       )}
