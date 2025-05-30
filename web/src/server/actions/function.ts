@@ -1,6 +1,6 @@
 'use server'
 
-import { Resource, ResourceList, SerializedYAML } from "@/common/types"
+import { Resource, ResourceList } from "@/common/types"
 import { client } from "../infra/k8s"
 
 const version = 'v1alpha1'
@@ -24,5 +24,5 @@ export async function getFunctionDetails(namespace: string, name: string) {
         plural,
         name,
     })
-    return resp as SerializedYAML<Resource>
+    return resp as Resource
 }
