@@ -7,10 +7,8 @@ import { listAllFunctions } from '@/server/actions/function';
 import { listAllAgents } from '@/server/actions/agent';
 import { useQuery } from '@tanstack/react-query';
 import { Empty, Spin } from 'antd';
-
-type Props = {
-  module: Module;
-};
+import { useContext } from 'react';
+import { ModuleContext } from '@/contexts/ModuleContext';
 
 const fetchAction = {
   [Module.Package]: listAllPackages,
@@ -18,10 +16,11 @@ const fetchAction = {
   [Module.Agent]: listAllAgents
 };
 
-const Overview = (props: Props) => {
+const Overview = () => {
+  const mod = useContext(ModuleContext);
   const { data, isPending, isError } = useQuery({
-    queryKey: [props.module],
-    queryFn: fetchAction[props.module]
+    queryKey: [mod],
+    queryFn: fetchAction[mod]
   });
   return (
     <div className="overflow-hidden bg-gray-bg w-full h-full">
