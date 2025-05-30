@@ -37,8 +37,7 @@ const Overview = (props: Props) => {
         data.items.map(v => (
           <div className="float-left p-2" key={v.metadata.uid}>
             <ToolCard
-              displayId={`${v.metadata.namespace}/${v.metadata.name}`}
-              queryId={v.metadata.uid}
+              id={`${v.metadata.namespace}/${v.metadata.name}`}
               name={`${v.spec.displayName || v.metadata.name}`}
               description={v.spec.description}
               logo={v.spec.logo}
