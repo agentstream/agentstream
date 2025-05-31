@@ -9,6 +9,7 @@ type Props = {
   description: string;
   logo: string;
   image: string;
+  loading: boolean;
 };
 
 const DetailCard = (props: Props) => {
@@ -19,34 +20,36 @@ const DetailCard = (props: Props) => {
   }
   return (
     <Card className="w-100">
-      <Space direction="vertical" size="large">
-        <Space size="large">
-          {showPlaceHolder ? (
-            <Skeleton.Image />
-          ) : (
-            <Image
-              alt="logo"
-              src={props.logo}
-              onError={handleError}
-              preview={false}
-              width={100}
-              height={100}
-            />
-          )}
-          <Space direction="vertical">
-            <div>
-              <b>Name</b>: {props.name}
-            </div>
-            <div>
-              <b>ID</b>: {props.id}
-            </div>
-            <div>
-              <b>Image</b>: {props.image}
-            </div>
+      <Skeleton loading={props.loading} active={true}>
+        <Space direction="vertical" size="large">
+          <Space size="large">
+            {showPlaceHolder ? (
+              <Skeleton.Image />
+            ) : (
+              <Image
+                alt="logo"
+                src={props.logo}
+                onError={handleError}
+                preview={false}
+                width={100}
+                height={100}
+              />
+            )}
+            <Space direction="vertical">
+              <div>
+                <b>Name</b>: {props.name}
+              </div>
+              <div>
+                <b>ID</b>: {props.id}
+              </div>
+              <div>
+                <b>Image</b>: {props.image}
+              </div>
+            </Space>
           </Space>
+          <div>{props.description}</div>
         </Space>
-        <div>{props.description}</div>
-      </Space>
+      </Skeleton>
     </Card>
   );
 };

@@ -8,7 +8,7 @@ import { getAgentDetails } from '@/server/actions/agent';
 import { getFunctionDetails } from '@/server/actions/function';
 import { getPackageDetails } from '@/server/actions/package';
 import { useQuery } from '@tanstack/react-query';
-import { Skeleton, Space, Typography } from 'antd';
+import { Space, Spin, Typography } from 'antd';
 import { usePathname } from 'next/navigation';
 import { use } from 'react';
 
@@ -28,9 +28,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   });
   return (
     <div className="overflow-auto w-full h-full">
-      {isPending ? (
-        <Skeleton active={true} />
-      ) : isError ? (
+      {isError ? (
         <EmptyPlaceHolder />
       ) : data ? (
         <Space direction="vertical">
@@ -40,22 +38,25 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             description={data.spec.description}
             logo={data.spec.logo}
             image={data.spec.functionType.cloud.image}
+            loading={isPending}
           />
           <Typography.Title level={3} className="m-0!">
-            Modules
+            Modules {isPending ? <Spin /> : null}
           </Typography.Title>
-          <div className="flex flex-wrap gap-3">
-            {Object.entries(data.spec.modules).map(([k, v]) => (
-              <div key={k}>
-                <ModuleCard
-                  name={v.displayName}
-                  description={v.description}
-                  sourceSchema={v.sourceSchema}
-                  sinkSchema={v.sinkSchema}
-                />
-              </div>
-            ))}
-          </div>
+          {!isPending ? (
+            <div className="flex flex-wrap gap-3">
+              {Object.entries(data.spec.modules).map(([k, v]) => (
+                <div key={k}>
+                  <ModuleCard
+                    name={v.displayName}
+                    description={v.description}
+                    sourceSchema={v.sourceSchema}
+                    sinkSchema={v.sinkSchema}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : null}
         </Space>
       ) : (
         <EmptyPlaceHolder />
