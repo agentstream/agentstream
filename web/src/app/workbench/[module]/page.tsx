@@ -23,7 +23,7 @@ export default function Page({ params }: { params: Promise<{ module: Module }> }
     queryFn: fetchAction[module]
   });
   return (
-    <div className="overflow-hidden bg-gray-bg w-full h-full">
+    <div className="overflow-auto bg-gray-bg w-full h-full">
       {isPending ? (
         <LoadingPlaceHolder />
       ) : isError ? (
