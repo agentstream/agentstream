@@ -29,14 +29,19 @@ const ModuleCard = (props: Props) => {
           ghost
           expandIconPosition="end"
           className="[&_.ant-collapse-header]:px-0! [&_.ant-collapse-header]:pt-0!"
-        >
-          <Collapse.Panel header={<b>SourceSchema</b>} key="source">
-            <MarkdownPreview source={codeBlockInMarkdown('yaml', props.sourceSchema)} />
-          </Collapse.Panel>
-          <Collapse.Panel header={<b>SinkSchema</b>} key="sink">
-            <MarkdownPreview source={codeBlockInMarkdown('yaml', props.sinkSchema)} />
-          </Collapse.Panel>
-        </Collapse>
+          items={[
+            {
+              key: 'source',
+              label: <b>SourceSchema</b>,
+              children: <MarkdownPreview source={codeBlockInMarkdown('yaml', props.sourceSchema)} />
+            },
+            {
+              key: 'sink',
+              label: <b>SinkSchema</b>,
+              children: <MarkdownPreview source={codeBlockInMarkdown('yaml', props.sinkSchema)} />
+            }
+          ]}
+        />
       </Space>
     </Card>
   );
