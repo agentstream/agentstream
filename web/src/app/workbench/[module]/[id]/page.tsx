@@ -27,7 +27,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     queryFn: () => fetchAction[mod](namespace, name)
   });
   return (
-    <div className="w-full p-5">
+    <div className="overflow-auto w-full h-full">
       {isPending ? (
         <Skeleton active={true} />
       ) : isError ? (
@@ -41,17 +41,21 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             logo={data.spec.logo}
             image={data.spec.functionType.cloud.image}
           />
-          <Typography.Title level={3}>Modules</Typography.Title>
-          {Object.entries(data.spec.modules).map(([k, v]) => (
-            <div className="float-left p-2" key={k}>
-              <ModuleCard
-                name={v.displayName}
-                description={v.description}
-                sourceSchema={v.sourceSchema}
-                sinkSchema={v.sinkSchema}
-              />
-            </div>
-          ))}
+          <Typography.Title level={3} className="m-0!">
+            Modules
+          </Typography.Title>
+          <div className="flex flex-wrap gap-3">
+            {Object.entries(data.spec.modules).map(([k, v]) => (
+              <div key={k}>
+                <ModuleCard
+                  name={v.displayName}
+                  description={v.description}
+                  sourceSchema={v.sourceSchema}
+                  sinkSchema={v.sinkSchema}
+                />
+              </div>
+            ))}
+          </div>
         </Space>
       ) : (
         <EmptyPlaceHolder />

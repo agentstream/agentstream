@@ -17,7 +17,7 @@ function codeBlockInMarkdown(language: string, content: string): string {
 
 const ModuleCard = (props: Props) => {
   return (
-    <Card>
+    <Card className="w-100">
       <Space direction="vertical">
         <div>
           <b>Name</b>: {props.name}

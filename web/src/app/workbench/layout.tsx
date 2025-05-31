@@ -24,7 +24,7 @@ export default function PageLayout({
         <aside className="h-full w-1/6 min-w-25">
           <NavMenu route={routes} />
         </aside>
-        <main className="w-full h-full overflow-auto">
+        <main className="w-full h-full overflow-auto p-5 bg-gray-bg">
           <QueryContext>{children}</QueryContext>
         </main>
       </main>

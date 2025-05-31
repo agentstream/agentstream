@@ -23,23 +23,25 @@ export default function Page({ params }: { params: Promise<{ module: Module }> }
     queryFn: fetchAction[module]
   });
   return (
-    <div className="overflow-auto bg-gray-bg w-full h-full">
+    <div className="overflow-auto w-full h-full">
       {isPending ? (
         <LoadingPlaceHolder />
       ) : isError ? (
         <EmptyPlaceHolder />
       ) : data && data.items.length > 0 ? (
-        data.items.map(v => (
-          <div className="float-left p-2" key={v.metadata.uid}>
-            <ToolCard
-              id={`${v.metadata.namespace}/${v.metadata.name}`}
-              name={`${v.spec.displayName || v.metadata.name}`}
-              description={v.spec.description}
-              logo={v.spec.logo}
-              type={module}
-            />
-          </div>
-        ))
+        <div className="flex flex-wrap gap-2">
+          {data.items.map(v => (
+            <div key={v.metadata.uid}>
+              <ToolCard
+                id={`${v.metadata.namespace}/${v.metadata.name}`}
+                name={`${v.spec.displayName || v.metadata.name}`}
+                description={v.spec.description}
+                logo={v.spec.logo}
+                type={module}
+              />
+            </div>
+          ))}
+        </div>
       ) : (
         <EmptyPlaceHolder />
       )}
