@@ -26,7 +26,7 @@ const ToolCard = (props: Props) => {
     router.push(routePathOfDetailPage(props.type, encodeURIComponent(props.id)));
   }
   return (
-    <Card className="w-65 h-35" variant="borderless">
+    <Card className="w-65 h-35 hover:cursor-pointer" variant="borderless" onClick={handleClick}>
       <Space direction="vertical">
         <Card.Meta
           avatar={
@@ -36,8 +36,6 @@ const ToolCard = (props: Props) => {
               size="large"
               icon={<QuestionCircleTwoTone />}
               onError={handleError}
-              onClick={handleClick}
-              className="hover:cursor-pointer"
             />
           }
           title={props.name}
