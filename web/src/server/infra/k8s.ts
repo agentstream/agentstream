@@ -1,3 +1,4 @@
+import 'server-only'
 import { CustomObjectsApi, KubeConfig } from "@kubernetes/client-node"
 
 const config = new KubeConfig()
