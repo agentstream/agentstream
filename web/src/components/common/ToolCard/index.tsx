@@ -26,7 +26,7 @@ const ToolCard = (props: Props) => {
     router.push(routePathOfDetailPage(props.type, encodeURIComponent(props.id)));
   }
   return (
-    <Card className="w-65 h-35 hover:cursor-pointer" variant="borderless" onClick={handleClick}>
+    <Card className="w-65 h-40 hover:cursor-pointer" variant="borderless" onClick={handleClick}>
       <Space direction="vertical">
         <Card.Meta
           avatar={
@@ -51,9 +51,9 @@ const ToolCard = (props: Props) => {
         />
         <Typography.Paragraph
           ellipsis={{
-            rows: 2
+            rows: 3
           }}
-          className="w-53 max-h-12"
+          className="w-53 max-h-18"
         >
           {props.description}
         </Typography.Paragraph>
