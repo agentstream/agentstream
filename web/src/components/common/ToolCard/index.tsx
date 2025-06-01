@@ -3,7 +3,7 @@
 import { Module } from '@/common/enum';
 import { routePathOfDetailPage } from '@/common/utils';
 import { QuestionCircleTwoTone } from '@ant-design/icons';
-import { Avatar, Card, Space } from 'antd';
+import { Avatar, Card, Space, Typography } from 'antd';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -38,10 +38,25 @@ const ToolCard = (props: Props) => {
               onError={handleError}
             />
           }
-          title={props.name}
-          description={props.id}
+          title={
+            <Typography.Title level={5} ellipsis={true} className="w-40 m-0!">
+              {props.name}
+            </Typography.Title>
+          }
+          description={
+            <Typography.Paragraph ellipsis={true} className="w-40 m-0!">
+              {props.id}
+            </Typography.Paragraph>
+          }
         />
-        {props.description}
+        <Typography.Paragraph
+          ellipsis={{
+            rows: 2
+          }}
+          className="w-53 max-h-12"
+        >
+          {props.description}
+        </Typography.Paragraph>
       </Space>
     </Card>
   );
