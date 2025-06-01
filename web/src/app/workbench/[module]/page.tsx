@@ -4,9 +4,9 @@ import { Module } from '@/common/enum';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
 import LoadingPlaceHolder from '@/components/common/LoadingPlaceHolder';
 import ToolCard from '@/components/common/ToolCard';
-import { listAllAgents } from '@/server/actions/agent';
-import { listAllFunctions } from '@/server/actions/function';
-import { listAllPackages } from '@/server/actions/package';
+import { listAllAgents } from '@/server/logics/agent';
+import { listAllFunctions } from '@/server/logics/function';
+import { listAllPackages } from '@/server/logics/package';
 import { useQuery } from '@tanstack/react-query';
 import { use } from 'react';
 
