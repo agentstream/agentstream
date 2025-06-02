@@ -26,11 +26,7 @@ const ToolCard = (props: Props) => {
     router.push(routePathOfDetailPage(props.type, encodeURIComponent(props.id)));
   }
   return (
-    <Card
-      className=" w-[16vw] min-w-64 h-40 hover:cursor-pointer"
-      variant="borderless"
-      onClick={handleClick}
-    >
+    <Card className="min-w-64 h-40 hover:cursor-pointer" variant="borderless" onClick={handleClick}>
       <Space direction="vertical">
         <Card.Meta
           avatar={

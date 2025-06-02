@@ -29,7 +29,7 @@ export default function Page({ params }: { params: Promise<{ module: Module }> }
       ) : isError ? (
         <EmptyPlaceHolder />
       ) : data && data.items.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-1 min-[660px]:grid-cols-2 min-[960px]:grid-cols-3 min-[1270px]:grid-cols-4 min-[1620px]:grid-cols-5 gap-2">
           {data.items.map(v => (
             <div key={v.metadata.uid}>
               <ToolCard
