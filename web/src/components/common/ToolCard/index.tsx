@@ -1,6 +1,7 @@
 'use client';
 
 import { Module } from '@/common/enum';
+import { ResourceInfo } from '@/common/types';
 import { routePathOfDetailPage } from '@/common/utils';
 import { QuestionCircleTwoTone } from '@ant-design/icons';
 import { Avatar, Card, Space, Typography } from 'antd';
@@ -8,22 +9,19 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 type Props = {
-  id: string;
-  name: string;
-  description: string;
-  logo: string;
+  info: ResourceInfo;
   type: Module;
 };
 
 const ToolCard = (props: Props) => {
-  const [showPlaceHolder, setShowPlaceHolder] = useState(props.logo === '');
+  const [showPlaceHolder, setShowPlaceHolder] = useState(props.info.logo === '');
   function handleError() {
     setShowPlaceHolder(true);
     return false;
   }
   const router = useRouter();
   function handleClick() {
-    router.push(routePathOfDetailPage(props.type, encodeURIComponent(props.id)));
+    router.push(routePathOfDetailPage(props.type, encodeURIComponent(props.info.id)));
   }
   return (
     <Card className="min-w-64 h-40 hover:cursor-pointer" variant="borderless" onClick={handleClick}>
@@ -31,7 +29,7 @@ const ToolCard = (props: Props) => {
         <Card.Meta
           avatar={
             <Avatar
-              src={showPlaceHolder ? undefined : props.logo}
+              src={showPlaceHolder ? undefined : props.info.logo}
               shape="square"
               size={60}
               icon={<QuestionCircleTwoTone />}
@@ -40,12 +38,12 @@ const ToolCard = (props: Props) => {
           }
           title={
             <Typography.Title level={5} ellipsis={true} className="w-40 m-0!">
-              {props.name}
+              {props.info.name}
             </Typography.Title>
           }
           description={
             <Typography.Paragraph ellipsis={true} className="w-40 m-0!">
-              {props.id}
+              {props.info.id}
             </Typography.Paragraph>
           }
         />
@@ -55,7 +53,7 @@ const ToolCard = (props: Props) => {
           }}
           className="w-53 max-h-18"
         >
-          {props.description}
+          {props.info.description}
         </Typography.Paragraph>
       </Space>
     </Card>

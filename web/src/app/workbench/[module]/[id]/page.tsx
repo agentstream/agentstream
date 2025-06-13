@@ -1,15 +1,16 @@
 'use client';
 
 import { Module } from '@/common/enum';
+import { parseResourceData } from '@/common/utils';
 import DetailCard from '@/components/common/DetailCard';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
 import ModuleCard from '@/components/common/ModuleCard';
+import { useModule } from '@/hooks';
 import { getAgentDetails } from '@/server/logics/agent';
 import { getFunctionDetails } from '@/server/logics/function';
 import { getPackageDetails } from '@/server/logics/package';
 import { useQuery } from '@tanstack/react-query';
 import { Space, Spin, Typography } from 'antd';
-import { usePathname } from 'next/navigation';
 import { use } from 'react';
 
 const fetchAction = {
@@ -21,7 +22,7 @@ const fetchAction = {
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [namespace, name] = decodeURIComponent(id).split('/');
-  const mod = usePathname().split('/')[2] as Module;
+  const mod = useModule();
   const { data, isPending, isError } = useQuery({
     queryKey: [mod, id],
     queryFn: () => fetchAction[mod](namespace, name)
@@ -32,14 +33,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         <EmptyPlaceHolder />
       ) : data ? (
         <Space direction="vertical">
-          <DetailCard
-            id={`${data.metadata.namespace}/${data.metadata.name}`}
-            name={`${data.spec.displayName || data.metadata.name}`}
-            description={data.spec.description}
-            logo={data.spec.logo}
-            image={data.spec.functionType.cloud.image}
-            loading={isPending}
-          />
+          <DetailCard info={parseResourceData(data)} loading={isPending} />
           <Typography.Title level={3} className="m-0!">
             Modules {isPending ? <Spin /> : null}
           </Typography.Title>
