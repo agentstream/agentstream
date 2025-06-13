@@ -1,19 +1,16 @@
 'use client';
 
+import { ResourceInfo } from '@/common/types';
 import { Card, Image, Skeleton, Space } from 'antd';
 import { useState } from 'react';
 
 type Props = {
-  id: string;
-  name: string;
-  description: string;
-  logo: string;
-  image: string;
+  info: ResourceInfo;
   loading: boolean;
 };
 
 const DetailCard = (props: Props) => {
-  const [showPlaceHolder, setShowPlaceHolder] = useState(props.logo === '');
+  const [showPlaceHolder, setShowPlaceHolder] = useState(props.info.logo === '');
   function handleError() {
     setShowPlaceHolder(true);
     return false;
@@ -28,7 +25,7 @@ const DetailCard = (props: Props) => {
             ) : (
               <Image
                 alt="logo"
-                src={props.logo}
+                src={props.info.logo}
                 onError={handleError}
                 preview={false}
                 width={100}
@@ -37,17 +34,17 @@ const DetailCard = (props: Props) => {
             )}
             <Space direction="vertical">
               <div>
-                <b>Name</b>: {props.name}
+                <b>Name</b>: {props.info.name}
               </div>
               <div>
-                <b>ID</b>: {props.id}
+                <b>ID</b>: {props.info.id}
               </div>
               <div>
-                <b>Image</b>: {props.image}
+                <b>Image</b>: {props.info.image}
               </div>
             </Space>
           </Space>
-          <div>{props.description}</div>
+          <div>{props.info.description}</div>
         </Space>
       </Skeleton>
     </Card>
