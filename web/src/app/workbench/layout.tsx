@@ -1,10 +1,11 @@
-import { Module } from '@/common/enum';
+import { Module, RoutePath } from '@/common/enum';
 import { routePathOfModuleOverview } from '@/common/utils';
 import NavBar from '@/components/NavBar';
 import NavMenu from '@/components/NavMenu';
 import QueryContext from '@/contexts/QueryContext';
 
 const routes = {
+  [RoutePath.WorkBench]: 'Dashboard',
   [routePathOfModuleOverview(Module.Package)]: 'Package',
   [routePathOfModuleOverview(Module.Function)]: 'Function',
   [routePathOfModuleOverview(Module.Agent)]: 'Agent'

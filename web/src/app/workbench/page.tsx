@@ -1,3 +1,3 @@
-export default function Page({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <div>{children}</div>;
+export default function Page() {
+  return <div>Dashboard is under developing now...</div>;
 }

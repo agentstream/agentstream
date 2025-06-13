@@ -1,9 +1,9 @@
-import { Module } from "./enum";
+import { Module, RoutePath } from "./enum";
 import YAML from 'yaml'
 import { SerializedJSON, SerializedYAML } from "./types";
 
 export function routePathOfModuleOverview(module: Module): string {
-    return `/workbench/${module}`
+    return `${RoutePath.WorkBench}/${module}`
 }
 
 export function routePathOfDetailPage(module: Module, id: string): string {
