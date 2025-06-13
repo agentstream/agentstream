@@ -33,7 +33,7 @@ const ToolCard = (props: Props) => {
             <Avatar
               src={showPlaceHolder ? undefined : props.logo}
               shape="square"
-              size="large"
+              size={60}
               icon={<QuestionCircleTwoTone />}
               onError={handleError}
             />
