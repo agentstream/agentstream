@@ -24,18 +24,11 @@ type Spec = {
 };
 
 type ModuleConfig = {
-    config: ConfigItem;
+    config: Record<string, string>;
     description: string;
     displayName: string;
     sinkSchema: SerializedYAML<unknown>;
     sourceSchema: SerializedYAML<unknown>;
-};
-
-type ConfigItem = {
-    description: string;
-    displayName: string;
-    required: boolean;
-    type: string;
 };
 
 export type SerializedYAML<T> = string & { __brand: 'SerializedYAML'; __originalType: T };
