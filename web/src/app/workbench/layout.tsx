@@ -22,7 +22,7 @@ export default function PageLayout({
         <NavBar />
       </header>
       <main className="w-full h-11/12 flex">
-        <aside className="h-full w-1/6 min-w-25">
+        <aside className="h-full w-1/6 min-w-30">
           <NavMenu route={routes} />
         </aside>
         <main className="w-full h-full overflow-auto p-5 bg-gray-bg">
