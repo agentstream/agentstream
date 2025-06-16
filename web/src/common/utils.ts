@@ -2,12 +2,16 @@ import { Module, RoutePath } from './enum';
 import YAML from 'yaml';
 import { ResourceData, ResourceInfo, SerializedJSON, SerializedYAML } from './types';
 
-export function routePathOfModuleOverview(module: Module): string {
+export function routePathOfOverviewPage(module: Module): string {
     return `${RoutePath.WorkBench}/${module}`;
 }
 
 export function routePathOfDetailPage(module: Module, id: string): string {
-    return `${routePathOfModuleOverview(module)}/${id}`;
+    return `${routePathOfOverviewPage(module)}/${id}`;
+}
+
+export function routePathOfCreatePage(module: Module): string {
+    return `${routePathOfOverviewPage(module)}/create`;
 }
 
 export function serializeToJSON<T>(value: T): SerializedJSON<T> {

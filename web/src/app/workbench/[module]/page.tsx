@@ -2,6 +2,7 @@
 
 import { Module } from '@/common/enum';
 import { parseResourceData } from '@/common/utils';
+import CreateCard from '@/components/common/CreateCard';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
 import LoadingPlaceHolder from '@/components/common/LoadingPlaceHolder';
 import ToolCard from '@/components/common/ToolCard';
@@ -29,16 +30,20 @@ export default function Page({ params }: { params: Promise<{ module: Module }> }
         <LoadingPlaceHolder />
       ) : isError ? (
         <EmptyPlaceHolder />
-      ) : data && data.items.length > 0 ? (
-        <div className="grid grid-cols-1 min-[660px]:grid-cols-2 min-[960px]:grid-cols-3 min-[1270px]:grid-cols-4 min-[1620px]:grid-cols-5 gap-2">
-          {data.items.map(v => (
-            <div key={v.metadata.uid}>
-              <ToolCard info={parseResourceData(v)} type={module} refresh={refetch} />
-            </div>
-          ))}
-        </div>
       ) : (
-        <EmptyPlaceHolder />
+        <div className="grid grid-cols-1 min-[660px]:grid-cols-2 min-[960px]:grid-cols-3 min-[1270px]:grid-cols-4 min-[1620px]:grid-cols-5 gap-2">
+          {data?.items?.length > 0
+            ? data.items.map(v => (
+                <ToolCard
+                  info={parseResourceData(v)}
+                  type={module}
+                  refresh={refetch}
+                  key={v.metadata.uid}
+                />
+              ))
+            : null}
+          {module === Module.Function ? <CreateCard type={module} /> : null}
+        </div>
       )}
     </div>
   );
