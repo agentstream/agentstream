@@ -19,7 +19,7 @@ const fetchAction = {
 
 export default function Page({ params }: { params: Promise<{ module: Module }> }) {
   const { module } = use(params);
-  const { data, isPending, isError } = useQuery({
+  const { data, isPending, isError, refetch } = useQuery({
     queryKey: [module],
     queryFn: fetchAction[module]
   });
@@ -33,7 +33,7 @@ export default function Page({ params }: { params: Promise<{ module: Module }> }
         <div className="grid grid-cols-1 min-[660px]:grid-cols-2 min-[960px]:grid-cols-3 min-[1270px]:grid-cols-4 min-[1620px]:grid-cols-5 gap-2">
           {data.items.map(v => (
             <div key={v.metadata.uid}>
-              <ToolCard info={parseResourceData(v)} type={module} />
+              <ToolCard info={parseResourceData(v)} type={module} refresh={refetch} />
             </div>
           ))}
         </div>
