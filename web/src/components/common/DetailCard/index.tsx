@@ -5,7 +5,7 @@ import { Card, Image, Skeleton, Space } from 'antd';
 import { useState } from 'react';
 
 type Props = {
-  info: ResourceInfo;
+  info: ResourceInfo & { image: string };
   loading: boolean;
 };
 

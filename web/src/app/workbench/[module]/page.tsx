@@ -22,7 +22,7 @@ export default function Page({ params }: { params: Promise<{ module: Module }> }
   const { module } = use(params);
   const { data, isPending, isError, refetch } = useQuery({
     queryKey: [module],
-    queryFn: fetchAction[module]
+    queryFn: async () => (await fetchAction[module]())?.items.map(parseResourceData) ?? []
   });
   return (
     <div className="overflow-auto w-full h-full">
@@ -32,15 +32,8 @@ export default function Page({ params }: { params: Promise<{ module: Module }> }
         <EmptyPlaceHolder />
       ) : (
         <div className="grid grid-cols-1 min-[660px]:grid-cols-2 min-[960px]:grid-cols-3 min-[1270px]:grid-cols-4 min-[1620px]:grid-cols-5 gap-2">
-          {data?.items?.length > 0
-            ? data.items.map(v => (
-                <ToolCard
-                  info={parseResourceData(v)}
-                  type={module}
-                  refresh={refetch}
-                  key={v.metadata.uid}
-                />
-              ))
+          {data?.length > 0
+            ? data.map(v => <ToolCard info={v} type={module} refresh={refetch} key={v.id} />)
             : null}
           {module === Module.Function ? <CreateCard type={module} /> : null}
         </div>
