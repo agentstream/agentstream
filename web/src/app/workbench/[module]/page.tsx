@@ -1,6 +1,7 @@
 'use client';
 
 import { Module } from '@/common/enum';
+import { FunctionSpec, PackageSpec, ResourceData } from '@/common/types';
 import { parseResourceData } from '@/common/utils';
 import CreateCard from '@/components/common/CreateCard';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
@@ -22,8 +23,20 @@ export default function Page({ params }: { params: Promise<{ module: Module }> }
   const { module } = use(params);
   const { data, isPending, isError, refetch } = useQuery({
     queryKey: [module],
-    queryFn: async () => (await fetchAction[module]())?.items.map(parseResourceData) ?? []
+    queryFn: async () => (await fetchAction[module]())?.items ?? []
   });
+  const logos = (
+    useQuery({
+      queryKey: [Module.Package],
+      queryFn: fetchAction[Module.Package]
+    }).data?.items ?? []
+  )
+    .map(item => {
+      const { id, logo } = parseResourceData(item);
+      return { [id]: logo };
+    })
+    .reduce((obj1, obj2) => ({ ...obj1, ...obj2 }), {});
+  const watchFunctionOverview = module === Module.Function;
   return (
     <div className="overflow-auto w-full h-full">
       {isPending ? (
@@ -33,9 +46,15 @@ export default function Page({ params }: { params: Promise<{ module: Module }> }
       ) : (
         <div className="grid grid-cols-1 min-[660px]:grid-cols-2 min-[960px]:grid-cols-3 min-[1270px]:grid-cols-4 min-[1620px]:grid-cols-5 gap-2">
           {data?.length > 0
-            ? data.map(v => <ToolCard info={v} type={module} refresh={refetch} key={v.id} />)
+            ? data.map(v => {
+                const info = parseResourceData(v as ResourceData<PackageSpec>);
+                if (watchFunctionOverview) {
+                  info.logo = logos[(v as ResourceData<FunctionSpec>).spec.package];
+                }
+                return <ToolCard info={info} type={module} refresh={refetch} key={info.id} />;
+              })
             : null}
-          {module === Module.Function ? <CreateCard type={module} /> : null}
+          {watchFunctionOverview ? <CreateCard type={module} /> : null}
         </div>
       )}
     </div>
