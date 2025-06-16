@@ -1,6 +1,13 @@
 import { Module, RoutePath } from './enum';
 import YAML from 'yaml';
-import { ResourceData, ResourceInfo, SerializedJSON, SerializedYAML } from './types';
+import {
+    PackageSpec,
+    ResourceData,
+    ResourceInfo,
+    SerializedJSON,
+    SerializedYAML,
+    Specs
+} from './types';
 
 export function routePathOfOverviewPage(module: Module): string {
     return `${RoutePath.WorkBench}/${module}`;
@@ -30,14 +37,12 @@ export function deserializeYAML<T>(value: SerializedYAML<T>): T {
     return YAML.parse(value);
 }
 
-export function parseResourceData(item: ResourceData): ResourceInfo {
-    const functionType = item.spec.functionType;
+export function parseResourceData<T extends Specs>(item: ResourceData<T>): ResourceInfo {
     return {
         id: `${item.metadata.namespace}/${item.metadata.name}`,
         name: item.spec.displayName || item.metadata.name,
         description: item.spec.description,
-        logo: item.spec.logo,
-        image: functionType ? functionType.cloud.image : ''
+        logo: (item.spec as PackageSpec).logo ?? ''
     };
 }
 

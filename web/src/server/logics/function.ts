@@ -1,6 +1,12 @@
 'use server';
 
-import { AgentStreamApiResp, KubernetesApiResp, ResourceData, ResourceList } from '@/common/types';
+import {
+    AgentStreamApiResp,
+    FunctionSpec,
+    KubernetesApiResp,
+    ResourceData,
+    ResourceList
+} from '@/common/types';
 import { client } from '../infra/k8s';
 import { ResourceKind } from '../common/enum';
 import { StatusCodes } from 'http-status-codes';
@@ -15,7 +21,7 @@ export async function listAllFunctions() {
         version,
         plural
     });
-    return resp as ResourceList;
+    return resp as ResourceList<FunctionSpec>;
 }
 
 export async function getFunctionDetails(namespace: string, name: string) {
@@ -26,7 +32,7 @@ export async function getFunctionDetails(namespace: string, name: string) {
         plural,
         name
     });
-    return resp as ResourceData;
+    return resp as ResourceData<FunctionSpec>;
 }
 
 const configItemPrefix = 'config.';
@@ -79,7 +85,7 @@ export async function createFunction(form: Record<string, string>): Promise<Agen
             code: StatusCodes.CREATED,
             data: {
                 bid: `${namespace}/${name}`,
-                uid: (resp as ResourceData).metadata.uid
+                uid: (resp as ResourceData<FunctionSpec>).metadata.uid
             }
         };
     } catch (err) {
@@ -99,7 +105,7 @@ export async function deleteFunction(name: string, namespace: string): Promise<A
             namespace,
             plural,
             name
-        })) as ResourceData;
+        })) as ResourceData<FunctionSpec>;
         return {
             code: StatusCodes.NO_CONTENT,
             data: {

@@ -1,43 +1,70 @@
-export type ResourceData = {
+import { Module } from './enum';
+
+export type ResourceData<T extends Specs> = {
     apiVersion: string;
     kind: string;
-    metadata: Metadata;
-    spec: Spec;
+    metadata: {
+        name: string;
+        namespace: string;
+        uid: string;
+    };
+    spec: {
+        description: string;
+        displayName: string;
+    } & T;
 };
 
-type Metadata = {
-    name: string;
-    namespace: string;
-    uid: string;
-};
-
-type Spec = {
-    description: string;
-    displayName: string;
+export type PackageSpec = {
     functionType: {
         cloud: {
             image: string;
         };
     };
     logo: string;
-    modules: Record<string, ModuleConfig>;
+    modules: Record<
+        string,
+        {
+            config: Record<string, string>;
+            description: string;
+            displayName: string;
+            sinkSchema: SerializedYAML<unknown>;
+            sourceSchema: SerializedYAML<unknown>;
+        }
+    >;
 };
 
-type ModuleConfig = {
+export type FunctionSpec = {
+    package: string;
+    module: string;
+    sources: {
+        pulsar: {
+            topic: string;
+            subscriptionName: string;
+        };
+    }[];
+    sink: {
+        pulsar: {
+            topic: string;
+        };
+    };
     config: Record<string, string>;
-    description: string;
-    displayName: string;
-    sinkSchema: SerializedYAML<unknown>;
-    sourceSchema: SerializedYAML<unknown>;
 };
+
+export type SpecMap = {
+    [Module.Package]: PackageSpec;
+    [Module.Function]: FunctionSpec;
+    [Module.Agent]: FunctionSpec;
+};
+
+export type Specs = SpecMap[keyof SpecMap];
 
 export type SerializedYAML<T> = string & { __brand: 'SerializedYAML'; __originalType: T };
 
 export type SerializedJSON<T> = string & { __serialized: T };
 
-export type ResourceList = {
+export type ResourceList<T extends Specs> = {
     apiVersion: string;
-    items: ResourceData[];
+    items: ResourceData<T>[];
     kind: string;
 };
 
@@ -46,7 +73,6 @@ export type ResourceInfo = {
     name: string;
     description: string;
     logo: string;
-    image: string;
 };
 
 export type KubernetesApiResp = {

@@ -1,19 +1,19 @@
-'use server'
+'use server';
 
-import { ResourceData, ResourceList } from "@/common/types";
-import { client } from "../infra/k8s";
+import { FunctionSpec, ResourceData, ResourceList } from '@/common/types';
+import { client } from '../infra/k8s';
 
-const version = 'v1alpha1'
-const group = 'fs.functionstream.github.io'
-const plural = 'agents'
+const version = 'v1alpha1';
+const group = 'fs.functionstream.github.io';
+const plural = 'agents';
 
 export async function listAllAgents() {
     const resp = await client.listCustomObjectForAllNamespaces({
         group,
         version,
         plural
-    })
-    return resp as ResourceList
+    });
+    return resp as ResourceList<FunctionSpec>;
 }
 
 export async function getAgentDetails(namespace: string, name: string) {
@@ -22,7 +22,7 @@ export async function getAgentDetails(namespace: string, name: string) {
         version,
         namespace,
         plural,
-        name,
-    })
-    return resp as ResourceData
+        name
+    });
+    return resp as ResourceData<FunctionSpec>;
 }

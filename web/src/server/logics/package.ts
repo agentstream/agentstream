@@ -1,19 +1,19 @@
-'use server'
+'use server';
 
-import { ResourceData, ResourceList } from "@/common/types"
-import { client } from "../infra/k8s"
+import { PackageSpec, ResourceData, ResourceList } from '@/common/types';
+import { client } from '../infra/k8s';
 
-const version = 'v1alpha1'
-const group = 'fs.functionstream.github.io'
-const plural = 'packages'
+const version = 'v1alpha1';
+const group = 'fs.functionstream.github.io';
+const plural = 'packages';
 
 export async function listAllPackages() {
     const resp = await client.listCustomObjectForAllNamespaces({
         group,
         version,
         plural
-    })
-    return resp as ResourceList
+    });
+    return resp as ResourceList<PackageSpec>;
 }
 
 export async function getPackageDetails(namespace: string, name: string) {
@@ -22,7 +22,7 @@ export async function getPackageDetails(namespace: string, name: string) {
         version,
         namespace,
         plural,
-        name,
-    })
-    return resp as ResourceData
+        name
+    });
+    return resp as ResourceData<PackageSpec>;
 }
