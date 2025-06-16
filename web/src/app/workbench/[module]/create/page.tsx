@@ -1,13 +1,17 @@
 'use client';
 
-import { Module } from '@/common/enum';
-import { parseResourceData } from '@/common/utils';
+import { Module, RoutePath } from '@/common/enum';
+import { codeBlockInMarkdown, parseResourceData } from '@/common/utils';
 import { useModule } from '@/hooks';
+import { createFunction } from '@/server/logics/function';
 import { listAllPackages } from '@/server/logics/package';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Col, Form, Input, Row, Select, Tag } from 'antd';
-import { notFound } from 'next/navigation';
+import { Button, Col, Form, Input, notification, Row, Select, Tag } from 'antd';
+import { StatusCodes } from 'http-status-codes';
+import { notFound, redirect, RedirectType } from 'next/navigation';
 import { useState } from 'react';
+import MarkdownPreview from '@uiw/react-markdown-preview';
+import '@ant-design/v5-patch-for-react-19';
 
 const validModules = [Module.Function, Module.Agent];
 
@@ -43,8 +47,25 @@ export default function Page() {
   const configIsNotEmpty = config.length > 0;
   const [sources, setSources] = useState('');
   const validSources = sources.split(',').filter(source => source !== '');
-  function handleSubmit() {
-    // TODO request backend
+  async function handleSubmit(form: Record<string, string>) {
+    const resp = await createFunction(form);
+    if (resp.code === StatusCodes.CREATED) {
+      notification.success({
+        message: 'Creation Success!',
+        placement: 'top'
+      });
+      redirect(`${RoutePath.WorkBench}/${Module.Function}`, RedirectType.push);
+    } else {
+      notification.error({
+        message: 'Creation failed!',
+        description: (
+          <MarkdownPreview
+            source={codeBlockInMarkdown('json', JSON.stringify(resp.data, null, 2))}
+          />
+        ),
+        placement: 'top'
+      });
+    }
   }
   return mod === Module.Function ? (
     <Form
@@ -69,7 +90,7 @@ export default function Page() {
       onFinish={handleSubmit}
     >
       <Form.Item
-        label={<div>Name</div>}
+        label="Name"
         name="name"
         rules={[{ required: true, message: `Please input a ${mod} name!` }]}
       >
@@ -127,7 +148,7 @@ export default function Page() {
       </Form.Item>
       {configIsNotEmpty
         ? config.map(([key, value]) => (
-            <Form.Item label={key} key={key}>
+            <Form.Item label={key} key={key} name={`config.${key}`}>
               <Input defaultValue={value} />
             </Form.Item>
           ))

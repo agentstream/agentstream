@@ -27,11 +27,16 @@ export function deserializeYAML<T>(value: SerializedYAML<T>): T {
 }
 
 export function parseResourceData(item: ResourceData): ResourceInfo {
+    const functionType = item.spec.functionType;
     return {
         id: `${item.metadata.namespace}/${item.metadata.name}`,
         name: item.spec.displayName || item.metadata.name,
         description: item.spec.description,
         logo: item.spec.logo,
-        image: item.spec.functionType.cloud.image
+        image: functionType ? functionType.cloud.image : ''
     };
+}
+
+export function codeBlockInMarkdown(language: string, content: string): string {
+    return '```' + language + '\n' + content.trim() + '\n```';
 }

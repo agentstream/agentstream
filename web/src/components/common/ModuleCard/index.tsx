@@ -3,6 +3,7 @@
 import { SerializedYAML } from '@/common/types';
 import { Card, Collapse, Space } from 'antd';
 import MarkdownPreview from '@uiw/react-markdown-preview';
+import { codeBlockInMarkdown } from '@/common/utils';
 
 type Props = {
   name: string;
@@ -10,10 +11,6 @@ type Props = {
   sourceSchema: SerializedYAML<unknown>;
   sinkSchema: SerializedYAML<unknown>;
 };
-
-function codeBlockInMarkdown(language: string, content: string): string {
-  return '```' + language + '\n' + content.trim() + '\n```';
-}
 
 const ModuleCard = (props: Props) => {
   return (

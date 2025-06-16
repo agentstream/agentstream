@@ -48,3 +48,14 @@ export type ResourceInfo = {
     logo: string;
     image: string;
 };
+
+export type KubernetesApiResp = {
+    code: number;
+    body: string;
+    header: object;
+};
+
+export type AgentStreamApiResp = {
+    code: number;
+    data: object;
+};
