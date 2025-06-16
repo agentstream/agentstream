@@ -90,3 +90,28 @@ export async function createFunction(form: Record<string, string>): Promise<Agen
         };
     }
 }
+
+export async function deleteFunction(name: string, namespace: string): Promise<AgentStreamApiResp> {
+    try {
+        const resp = (await client.deleteNamespacedCustomObject({
+            group,
+            version,
+            namespace,
+            plural,
+            name
+        })) as ResourceData;
+        return {
+            code: StatusCodes.NO_CONTENT,
+            data: {
+                bid: `${resp.metadata.namespace}/${resp.metadata.name}`,
+                uid: resp.metadata.uid
+            }
+        };
+    } catch (err) {
+        const { code, body } = err as KubernetesApiResp;
+        return {
+            code,
+            data: JSON.parse(body)
+        };
+    }
+}
