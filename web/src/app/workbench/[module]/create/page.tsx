@@ -1,7 +1,7 @@
 'use client';
 
-import { Module, RoutePath } from '@/common/enum';
-import { codeBlockInMarkdown, parseResourceData } from '@/common/utils';
+import { Module } from '@/common/enum';
+import { codeBlockInMarkdown, parseResourceData, routePathOfOverviewPage } from '@/common/utils';
 import { useModule } from '@/hooks';
 import { createFunction } from '@/server/logics/function';
 import { listAllPackages } from '@/server/logics/package';
@@ -54,7 +54,7 @@ export default function Page() {
         message: 'Creation Success!',
         placement: 'top'
       });
-      redirect(`${RoutePath.WorkBench}/${Module.Function}`, RedirectType.push);
+      redirect(routePathOfOverviewPage(Module.Function), RedirectType.push);
     } else {
       notification.error({
         message: 'Creation failed!',
