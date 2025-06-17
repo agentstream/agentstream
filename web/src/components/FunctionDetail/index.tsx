@@ -1,16 +1,16 @@
 'use client';
 
 import { Module } from '@/common/enum';
-import { deleteFunction, getFunctionDetails } from '@/server/logics/function';
+import { getFunctionDetails } from '@/server/logics/function';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Descriptions, notification, Skeleton, Space, Tag } from 'antd';
+import { Button, Descriptions, Skeleton, Space, Tag } from 'antd';
 import EmptyPlaceHolder from '../common/EmptyPlaceHolder';
 import MarkdownPreview from '@uiw/react-markdown-preview';
 import { codeBlockInMarkdown, routePathOfOverviewPage } from '@/common/utils';
 import '@ant-design/v5-patch-for-react-19';
 import DeleteButton from '../common/DeleteButton';
-import { StatusCodes } from 'http-status-codes';
 import { redirect, RedirectType } from 'next/navigation';
+import { deleteFunctionInteraction } from '@/common/logics';
 
 type Props = {
   name: string;
@@ -22,23 +22,7 @@ const FunctionDetail = (props: Props) => {
     queryFn: () => getFunctionDetails(props.namespace, props.name)
   });
   async function handleDelete() {
-    const resp = await deleteFunction(props.name, props.namespace);
-    if (resp.code === StatusCodes.NO_CONTENT) {
-      notification.success({
-        message: 'Delete Success!',
-        placement: 'top'
-      });
-    } else {
-      notification.error({
-        message: 'Delete failed!',
-        description: (
-          <MarkdownPreview
-            source={codeBlockInMarkdown('json', JSON.stringify(resp.data, null, 2))}
-          />
-        ),
-        placement: 'top'
-      });
-    }
+    await deleteFunctionInteraction(props.name, props.namespace);
     redirect(routePathOfOverviewPage(Module.Function), RedirectType.replace);
   }
   return isError || !data ? (
