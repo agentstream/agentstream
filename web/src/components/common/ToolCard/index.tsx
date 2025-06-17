@@ -2,16 +2,14 @@
 
 import { Module } from '@/common/enum';
 import { ResourceInfo } from '@/common/types';
-import { codeBlockInMarkdown, routePathOfDetailPage } from '@/common/utils';
-import { deleteFunction } from '@/server/logics/function';
+import { routePathOfDetailPage } from '@/common/utils';
 import Icon, { DeleteOutlined, QuestionCircleTwoTone } from '@ant-design/icons';
-import { Avatar, Card, notification, Space, Typography } from 'antd';
-import { StatusCodes } from 'http-status-codes';
+import { Avatar, Card, Space, Typography } from 'antd';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import MarkdownPreview from '@uiw/react-markdown-preview';
 import '@ant-design/v5-patch-for-react-19';
 import DeleteButton from '../DeleteButton';
+import { deleteFunctionInteraction } from '@/common/logics';
 
 type Props = {
   info: ResourceInfo;
@@ -31,23 +29,7 @@ const ToolCard = (props: Props) => {
   }
   async function handleDelete() {
     const [namespace, name] = props.info.id.split('/');
-    const resp = await deleteFunction(name, namespace);
-    if (resp.code === StatusCodes.NO_CONTENT) {
-      notification.success({
-        message: 'Delete Success!',
-        placement: 'top'
-      });
-    } else {
-      notification.error({
-        message: 'Delete failed!',
-        description: (
-          <MarkdownPreview
-            source={codeBlockInMarkdown('json', JSON.stringify(resp.data, null, 2))}
-          />
-        ),
-        placement: 'top'
-      });
-    }
+    await deleteFunctionInteraction(name, namespace);
     props.refresh();
   }
   return (
