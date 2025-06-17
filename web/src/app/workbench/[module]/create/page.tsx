@@ -97,7 +97,7 @@ export default function Page() {
         <Input />
       </Form.Item>
       <Form.Item label="Description" name="description">
-        <Input.TextArea autoSize />
+        <Input.TextArea rows={3} />
       </Form.Item>
       <Form.Item
         label="Package"
