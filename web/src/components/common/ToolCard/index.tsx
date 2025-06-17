@@ -5,12 +5,13 @@ import { ResourceInfo } from '@/common/types';
 import { codeBlockInMarkdown, routePathOfDetailPage } from '@/common/utils';
 import { deleteFunction } from '@/server/logics/function';
 import Icon, { DeleteOutlined, QuestionCircleTwoTone } from '@ant-design/icons';
-import { Avatar, Card, notification, Popconfirm, Space, Typography } from 'antd';
+import { Avatar, Card, notification, Space, Typography } from 'antd';
 import { StatusCodes } from 'http-status-codes';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import MarkdownPreview from '@uiw/react-markdown-preview';
 import '@ant-design/v5-patch-for-react-19';
+import DeleteButton from '../DeleteButton';
 
 type Props = {
   info: ResourceInfo;
@@ -83,16 +84,12 @@ const ToolCard = (props: Props) => {
         </Typography.Paragraph>
       </Space>
       {props.type === Module.Function ? (
-        <Popconfirm
-          title={`Delete this ${props.type}`}
-          description={`Are you sure to delete this ${props.type}?`}
-          onConfirm={handleDelete}
-        >
+        <DeleteButton type={props.type} action={handleDelete}>
           <Icon
             component={DeleteOutlined}
             className="text-2xl absolute bottom-2 right-2 hover:cursor-pointer hover:text-blue-lv6!"
           />
-        </Popconfirm>
+        </DeleteButton>
       ) : null}
     </Card>
   );
