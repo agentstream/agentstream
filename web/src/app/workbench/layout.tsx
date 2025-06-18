@@ -23,7 +23,6 @@ export default function PageLayout({
   const { height, width } = useWindowSize();
   const topbarHeight = Math.max(height / 12, 48).toFixed(3);
   const sidebarWidth = Math.max(width / 6, 120).toFixed(3);
-  console.log(sidebarWidth, topbarHeight);
   return (
     <Splitter layout="vertical" className="h-screen! w-screen!" onResize={() => {}}>
       <Splitter.Panel resizable={false} defaultSize={topbarHeight} size={topbarHeight}>
