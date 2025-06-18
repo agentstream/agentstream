@@ -38,7 +38,7 @@ const ToolCard = (props: Props) => {
         <Card.Meta
           avatar={
             <Avatar
-              src={showPlaceHolder ? undefined : props.info.logo}
+              src={showPlaceHolder ? undefined : props.info.logo || null}
               shape="square"
               size={60}
               icon={<QuestionCircleTwoTone />}
