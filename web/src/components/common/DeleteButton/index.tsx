@@ -1,7 +1,7 @@
 'use client';
 
 import { Module } from '@/common/enum';
-import { Popconfirm } from 'antd';
+import { Popconfirm } from '@/common/antd';
 import { PropsWithChildren } from 'react';
 
 type Props = {

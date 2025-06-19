@@ -6,12 +6,12 @@ import { useModule } from '@/hooks';
 import { createFunction } from '@/server/logics/function';
 import { listAllPackages } from '@/server/logics/package';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Col, Form, Input, notification, Row, Select, Tag } from 'antd';
+import { Button, Col, Form, Input, Row, Select, Tag } from 'antd';
+import { notification } from '@/common/antd';
 import { StatusCodes } from 'http-status-codes';
 import { notFound, redirect, RedirectType } from 'next/navigation';
 import { useState } from 'react';
 import MarkdownPreview from '@uiw/react-markdown-preview';
-import '@ant-design/v5-patch-for-react-19';
 
 const validModules = [Module.Function, Module.Agent];
 

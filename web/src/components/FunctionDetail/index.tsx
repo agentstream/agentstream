@@ -7,7 +7,6 @@ import { Button, Descriptions, Skeleton, Space, Tabs, Tag } from 'antd';
 import EmptyPlaceHolder from '../common/EmptyPlaceHolder';
 import MarkdownPreview from '@uiw/react-markdown-preview';
 import { codeBlockInMarkdown, routePathOfOverviewPage } from '@/common/utils';
-import '@ant-design/v5-patch-for-react-19';
 import DeleteButton from '../common/DeleteButton';
 import { redirect, RedirectType } from 'next/navigation';
 import { deleteFunctionInteraction } from '@/common/logics';
