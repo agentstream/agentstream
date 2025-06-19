@@ -7,7 +7,6 @@ import Icon, { DeleteOutlined, QuestionCircleTwoTone } from '@ant-design/icons';
 import { Avatar, Card, Space, Typography } from 'antd';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import '@ant-design/v5-patch-for-react-19';
 import DeleteButton from '../DeleteButton';
 import { deleteFunctionInteraction } from '@/common/logics';
 
