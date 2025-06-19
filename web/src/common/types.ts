@@ -77,8 +77,23 @@ export type ResourceInfo = {
 
 export type KubernetesApiResp = {
     code: number;
-    body: string;
+    body: SerializedJSON<KubernetesApiRespBody>;
     header: object;
+};
+
+export type KubernetesApiRespBody = {
+    kind: string;
+    apiVersion: string;
+    metadata: object;
+    status: string;
+    message: string;
+    reason: string;
+    details: {
+        name: string;
+        group: string;
+        kind: string;
+    };
+    code: number;
 };
 
 export type AgentStreamApiResp = {

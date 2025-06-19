@@ -1,7 +1,7 @@
 'use client';
 
 import { Module } from '@/common/enum';
-import { codeBlockInMarkdown, parseResourceData, routePathOfOverviewPage } from '@/common/utils';
+import { parseResourceData, routePathOfOverviewPage } from '@/common/utils';
 import { useModule } from '@/hooks';
 import { createFunction } from '@/server/logics/function';
 import { listAllPackages } from '@/server/logics/package';
@@ -11,7 +11,8 @@ import { notification } from '@/common/antd';
 import { StatusCodes } from 'http-status-codes';
 import { notFound, redirect, RedirectType } from 'next/navigation';
 import { useState } from 'react';
-import MarkdownPreview from '@uiw/react-markdown-preview';
+import { KubernetesApiRespBody } from '@/common/types';
+import { placement } from '@/common/constants';
 
 const validModules = [Module.Function, Module.Agent];
 
@@ -52,18 +53,14 @@ export default function Page() {
     if (resp.code === StatusCodes.CREATED) {
       notification.success({
         message: 'Creation Success!',
-        placement: 'top'
+        placement
       });
       redirect(routePathOfOverviewPage(Module.Function), RedirectType.push);
     } else {
       notification.error({
         message: 'Creation failed!',
-        description: (
-          <MarkdownPreview
-            source={codeBlockInMarkdown('json', JSON.stringify(resp.data, null, 2))}
-          />
-        ),
-        placement: 'top'
+        description: (resp.data as KubernetesApiRespBody).message,
+        placement
       });
     }
   }

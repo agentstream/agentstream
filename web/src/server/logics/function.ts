@@ -10,6 +10,7 @@ import {
 import { client } from '../infra/k8s';
 import { ResourceKind } from '../common/enum';
 import { StatusCodes } from 'http-status-codes';
+import { deserializeJSON } from '@/common/utils';
 
 const version = 'v1alpha1';
 const group = 'fs.functionstream.github.io';
@@ -92,7 +93,7 @@ export async function createFunction(form: Record<string, string>): Promise<Agen
         const { code, body } = err as KubernetesApiResp;
         return {
             code,
-            data: JSON.parse(body)
+            data: deserializeJSON(body)
         };
     }
 }
@@ -117,7 +118,7 @@ export async function deleteFunction(name: string, namespace: string): Promise<A
         const { code, body } = err as KubernetesApiResp;
         return {
             code,
-            data: JSON.parse(body)
+            data: deserializeJSON(body)
         };
     }
 }
