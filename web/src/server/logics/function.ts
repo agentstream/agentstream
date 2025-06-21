@@ -78,7 +78,7 @@ export async function createFunction(form: Record<string, string>): Promise<Agen
         const resp = await client.createNamespacedCustomObject({
             group,
             version,
-            namespace: form['package'].split('/')[0],
+            namespace,
             plural,
             body
         });
@@ -112,6 +112,71 @@ export async function deleteFunction(name: string, namespace: string): Promise<A
             data: {
                 bid: `${resp.metadata.namespace}/${resp.metadata.name}`,
                 uid: resp.metadata.uid
+            }
+        };
+    } catch (err) {
+        const { code, body } = err as KubernetesApiResp;
+        return {
+            code,
+            data: deserializeJSON(body)
+        };
+    }
+}
+
+export async function updateFunction(form: Record<string, string>): Promise<AgentStreamApiResp> {
+    const { name, description, package: pak, module, sources, sink } = form;
+    const namespace = pak.split('/')[0];
+    const config = Object.entries(form)
+        .filter(([key]) => key.startsWith(configItemPrefix))
+        .map(([key, value]) => ({ [key.slice(configItemPrefix.length)]: value }))
+        .reduce((obj1, obj2) => ({ ...obj1, ...obj2 }), {});
+    const {
+        metadata: { resourceVersion }
+    } = await getFunctionDetails(namespace, name);
+    const body = {
+        apiVersion: `${group}/${version}`,
+        kind: ResourceKind.Function,
+        metadata: {
+            name,
+            namespace,
+            resourceVersion
+        },
+        spec: {
+            description: description ?? '',
+            displayName: name,
+            module,
+            package: pak,
+            sources: (sources ?? '')
+                .split(',')
+                .filter(item => item !== '')
+                .map(topic => ({
+                    pulsar: {
+                        topic,
+                        subscriptionName: ''
+                    }
+                })),
+            sink: {
+                pulsar: {
+                    topic: sink ?? ''
+                }
+            },
+            config
+        }
+    };
+    try {
+        const resp = await client.replaceNamespacedCustomObject({
+            name,
+            group,
+            version,
+            namespace,
+            plural,
+            body
+        });
+        return {
+            code: StatusCodes.OK,
+            data: {
+                bid: `${namespace}/${name}`,
+                uid: (resp as ResourceData<FunctionSpec>).metadata.uid
             }
         };
     } catch (err) {

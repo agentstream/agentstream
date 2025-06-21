@@ -11,7 +11,8 @@ import { StatusCodes } from 'http-status-codes';
 import { useState } from 'react';
 import { redirect, RedirectType } from 'next/navigation';
 import { KubernetesApiRespBody } from '@/common/types';
-import { placement } from '@/common/constants';
+import { formLayout, placement } from '@/common/constants';
+import { flattenFunctionConfig } from '@/common/logics';
 
 const FunctionForm = () => {
   const [form] = Form.useForm();
@@ -61,23 +62,9 @@ const FunctionForm = () => {
     <Form
       form={form}
       name={Module.Function}
-      labelCol={{
-        xs: { span: 24 },
-        sm: { span: 6 },
-        md: { span: 4 },
-        lg: { span: 4 },
-        xl: { span: 3 },
-        xxl: { span: 2 }
-      }}
-      wrapperCol={{
-        xs: { span: 24 },
-        sm: { span: 18 },
-        md: { span: 20 },
-        lg: { span: 18 },
-        xl: { span: 19 },
-        xxl: { span: 20 }
-      }}
+      {...formLayout}
       onFinish={handleSubmit}
+      initialValues={flattenFunctionConfig(config)}
     >
       <Form.Item
         label="Name"
@@ -137,9 +124,9 @@ const FunctionForm = () => {
         {configIsNotEmpty ? null : <Input value="None" disabled={true} />}
       </Form.Item>
       {configIsNotEmpty
-        ? config.map(([key, value]) => (
+        ? config.map(([key]) => (
             <Form.Item label={key} key={key} name={`config.${key}`}>
-              <Input defaultValue={value} />
+              <Input />
             </Form.Item>
           ))
         : null}

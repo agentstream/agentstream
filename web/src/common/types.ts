@@ -7,6 +7,7 @@ export type ResourceData<T extends Specs> = {
         name: string;
         namespace: string;
         uid: string;
+        resourceVersion: string;
     };
     spec: {
         description: string;
