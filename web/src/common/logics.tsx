@@ -19,3 +19,9 @@ export async function deleteFunctionInteraction(name: string, namespace: string)
     });
   }
 }
+
+export function flattenFunctionConfig(config: [string, string][]): Record<string, string> {
+  return config
+    .map(([key, value]) => ({ [`config.${key}`]: value }))
+    .reduce((obj1, obj2) => ({ ...obj1, ...obj2 }), {});
+}
