@@ -1,0 +1,593 @@
+diff --git a/deploy/chart/README.md b/deploy/chart/README.md
+new file mode 100644
+index 0000000..9ff881c
+--- /dev/null
++++ b/deploy/chart/README.md
+@@ -0,0 +1,139 @@
++# Operator Helm Chart
++
++This Helm chart deploys the AgentStream operator to a Kubernetes cluster.
++
++## Features
++
++- **Resource Prefix Support**: All Kubernetes resources can be prefixed to avoid naming conflicts when deploying multiple instances
++- **RBAC Integration**: Configurable RBAC roles and bindings
++- **Metrics Support**: Optional Prometheus metrics endpoint
++- **Certificate Management**: Optional cert-manager integration for TLS certificates
++- **Network Policies**: Optional network policies for metrics access control
++
++## Configuration
++
++### Global Settings
++
++```yaml
++global:
++  # Resource name prefix. If not set, defaults to the Helm release name.
++  # This prefix will be applied to all resource names to avoid conflicts
++  # when deploying multiple instances of the operator.
++  namePrefix: ""
++```
++
++### Controller Manager
++
++```yaml
++controllerManager:
++  replicas: 1
++  container:
++    image:
++      repository: controller
++      tag: latest
++    args:
++      - "--leader-elect"
++      - "--metrics-bind-address=:8443"
++      - "--health-probe-bind-address=:8081"
++```
++
++### RBAC
++
++```yaml
++rbac:
++  enable: true  # Enable RBAC resources
++```
++
++### Metrics
++
++```yaml
++metrics:
++  enable: true  # Enable metrics service
++```
++
++### Prometheus
++
++```yaml
++prometheus:
++  enable: false  # Enable ServiceMonitor for Prometheus
++```
++
++### Certificate Manager
++
++```yaml
++certmanager:
++  enable: false  # Enable cert-manager integration
++```
++
++### Network Policies
++
++```yaml
++networkPolicy:
++  enable: false  # Enable network policies
++```
++
++## Resource Prefix Examples
++
++### Default Behavior (No Prefix)
++
++When `global.namePrefix` is not set, resources will be named using the Helm release name:
++
++```bash
++helm install my-operator ./chart
++```
++
++This creates resources like:
++- `my-operator-operator-controller-manager` (Deployment)
++- `my-operator-operator-controller-manager-metrics-service` (Service)
++- `my-operator-operator-manager-role` (ClusterRole)
++
++### Custom Prefix
++
++When `global.namePrefix` is set, resources will use the custom prefix:
++
++```bash
++helm install my-operator ./chart --set global.namePrefix=prod
++```
++
++This creates resources like:
++- `prod-operator-controller-manager` (Deployment)
++- `prod-operator-controller-manager-metrics-service` (Service)
++- `prod-operator-manager-role` (ClusterRole)
++
++### Multiple Instances
++
++The prefix functionality allows you to deploy multiple instances of the operator without conflicts:
++
++```bash
++# Development instance
++helm install dev-operator ./chart --set global.namePrefix=dev
++
++# Production instance  
++helm install prod-operator ./chart --set global.namePrefix=prod
++
++# Staging instance
++helm install staging-operator ./chart --set global.namePrefix=staging
++```
++
++## Installation
++
++```bash
++# Basic installation
++helm install my-operator ./chart
++
++# With custom prefix
++helm install my-operator ./chart --set global.namePrefix=my-prefix
++
++# With custom values file
++helm install my-operator ./chart -f values.yaml
++```
++
++## Testing
++
++You can test the prefix functionality using the provided test values:
++
++```bash
++helm template test-operator ./chart -f test-prefix-values.yaml
++```
++
++This will generate Kubernetes manifests with the prefix "my-prefix" applied to all resource names. 
+\ No newline at end of file
+diff --git a/dist/chart/templates/_helpers.tpl b/deploy/chart/templates/_helpers.tpl
+index 668abe3..2c19756 100644
+--- a/dist/chart/templates/_helpers.tpl
++++ b/deploy/chart/templates/_helpers.tpl
+@@ -12,6 +12,23 @@
+ {{- end }}
+ {{- end }}
+ 
++{{- define "chart.fullname" -}}
++{{- if .Values.global.namePrefix }}
++{{- printf "%s-%s" .Values.global.namePrefix (include "chart.name" .) | trunc 63 | trimSuffix "-" }}
++{{- else }}
++{{- printf "%s-%s" .Release.Name (include "chart.name" .) | trunc 63 | trimSuffix "-" }}
++{{- end }}
++{{- end }}
++
++{{- define "chart.resourceName" -}}
++{{- $name := index . 0 -}}
++{{- $context := index . 1 -}}
++{{- if $context.Values.global.namePrefix }}
++{{- printf "%s-%s" $context.Values.global.namePrefix $name | trunc 63 | trimSuffix "-" }}
++{{- else }}
++{{- printf "%s-%s" $context.Release.Name $name | trunc 63 | trimSuffix "-" }}
++{{- end }}
++{{- end }}
+ 
+ {{- define "chart.labels" -}}
+ {{- if .Chart.AppVersion -}}
+@@ -25,13 +42,11 @@ app.kubernetes.io/instance: {{ .Release.Name }}
+ app.kubernetes.io/managed-by: {{ .Release.Service }}
+ {{- end }}
+ 
+-
+ {{- define "chart.selectorLabels" -}}
+ app.kubernetes.io/name: {{ include "chart.name" . }}
+ app.kubernetes.io/instance: {{ .Release.Name }}
+ {{- end }}
+ 
+-
+ {{- define "chart.hasMutatingWebhooks" -}}
+ {{- $hasMutating := false }}
+ {{- range . }}
+@@ -40,7 +55,6 @@ app.kubernetes.io/instance: {{ .Release.Name }}
+ {{- end }}
+ {{ $hasMutating }}}}{{- end }}
+ 
+-
+ {{- define "chart.hasValidatingWebhooks" -}}
+ {{- $hasValidating := false }}
+ {{- range . }}
+diff --git a/dist/chart/templates/certmanager/certificate.yaml b/deploy/chart/templates/certmanager/certificate.yaml
+index bc7ed62..0d52e0d 100644
+--- a/dist/chart/templates/certmanager/certificate.yaml
++++ b/deploy/chart/templates/certmanager/certificate.yaml
+@@ -5,7 +5,7 @@ kind: Issuer
+ metadata:
+   labels:
+     {{- include "chart.labels" . | nindent 4 }}
+-  name: selfsigned-issuer
++  name: {{ include "chart.resourceName" (list "selfsigned-issuer" .) }}
+   namespace: {{ .Release.Namespace }}
+ spec:
+   selfSigned: {}
+@@ -21,16 +21,16 @@ metadata:
+     {{- end }}
+   labels:
+     {{- include "chart.labels" . | nindent 4 }}
+-  name: metrics-certs
++  name: {{ include "chart.resourceName" (list "metrics-certs" .) }}
+   namespace: {{ .Release.Namespace }}
+ spec:
+   dnsNames:
+     - operator.{{ .Release.Namespace }}.svc
+     - operator.{{ .Release.Namespace }}.svc.cluster.local
+-    - operator-metrics-service.{{ .Release.Namespace }}.svc
++    - {{ include "chart.resourceName" (list "operator-controller-manager-metrics-service" .) }}.{{ .Release.Namespace }}.svc
+   issuerRef:
+     kind: Issuer
+-    name: selfsigned-issuer
+-  secretName: metrics-server-cert
++    name: {{ include "chart.resourceName" (list "selfsigned-issuer" .) }}
++  secretName: {{ include "chart.resourceName" (list "metrics-server-cert" .) }}
+ {{- end }}
+ {{- end }}
+diff --git a/dist/chart/templates/manager/manager.yaml b/deploy/chart/templates/manager/manager.yaml
+index f0b9ad3..3aa4c29 100644
+--- a/dist/chart/templates/manager/manager.yaml
++++ b/deploy/chart/templates/manager/manager.yaml
+@@ -1,7 +1,7 @@
+ apiVersion: apps/v1
+ kind: Deployment
+ metadata:
+-  name: operator-controller-manager
++  name: {{ include "chart.resourceName" (list "operator-controller-manager" .) }}
+   namespace: {{ .Release.Namespace }}
+   labels:
+     {{- include "chart.labels" . | nindent 4 }}
+@@ -59,13 +59,13 @@ spec:
+           {{- end }}
+       securityContext:
+         {{- toYaml .Values.controllerManager.securityContext | nindent 8 }}
+-      serviceAccountName: {{ .Values.controllerManager.serviceAccountName }}
++      serviceAccountName: {{ include "chart.resourceName" (list .Values.controllerManager.serviceAccountName .) }}
+       terminationGracePeriodSeconds: {{ .Values.controllerManager.terminationGracePeriodSeconds }}
+       {{- if and .Values.certmanager.enable .Values.metrics.enable }}
+       volumes:
+         {{- if and .Values.metrics.enable .Values.certmanager.enable }}
+         - name: metrics-certs
+           secret:
+-            secretName: metrics-server-cert
++            secretName: {{ include "chart.resourceName" (list "metrics-server-cert" .) }}
+         {{- end }}
+       {{- end }}
+diff --git a/dist/chart/templates/metrics/metrics-service.yaml b/deploy/chart/templates/metrics/metrics-service.yaml
+index a91cc04..68fd3d1 100644
+--- a/dist/chart/templates/metrics/metrics-service.yaml
++++ b/deploy/chart/templates/metrics/metrics-service.yaml
+@@ -2,7 +2,7 @@
+ apiVersion: v1
+ kind: Service
+ metadata:
+-  name: operator-controller-manager-metrics-service
++  name: {{ include "chart.resourceName" (list "operator-controller-manager-metrics-service" .) }}
+   namespace: {{ .Release.Namespace }}
+   labels:
+     {{- include "chart.labels" . | nindent 4 }}
+diff --git a/dist/chart/templates/network-policy/allow-metrics-traffic.yaml b/deploy/chart/templates/network-policy/allow-metrics-traffic.yaml
+index 9f392cf..b29fe62 100755
+--- a/dist/chart/templates/network-policy/allow-metrics-traffic.yaml
++++ b/deploy/chart/templates/network-policy/allow-metrics-traffic.yaml
+@@ -7,7 +7,7 @@ kind: NetworkPolicy
+ metadata:
+   labels:
+     {{- include "chart.labels" . | nindent 4 }}
+-  name: allow-metrics-traffic
++  name: {{ include "chart.resourceName" (list "allow-metrics-traffic" .) }}
+   namespace: {{ .Release.Namespace }}
+ spec:
+   podSelector:
+diff --git a/dist/chart/templates/prometheus/monitor.yaml b/deploy/chart/templates/prometheus/monitor.yaml
+index f6b7706..0a0c11b 100644
+--- a/dist/chart/templates/prometheus/monitor.yaml
++++ b/deploy/chart/templates/prometheus/monitor.yaml
+@@ -5,7 +5,7 @@ kind: ServiceMonitor
+ metadata:
+   labels:
+     {{- include "chart.labels" . | nindent 4 }}
+-  name: operator-controller-manager-metrics-monitor
++  name: {{ include "chart.resourceName" (list "operator-controller-manager-metrics-monitor" .) }}
+   namespace: {{ .Release.Namespace }}
+ spec:
+   endpoints:
+@@ -15,19 +15,19 @@ spec:
+       bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+       tlsConfig:
+         {{- if .Values.certmanager.enable }}
+-        serverName: operator-controller-manager-metrics-service.{{ .Release.Namespace }}.svc
++        serverName: {{ include "chart.resourceName" (list "operator-controller-manager-metrics-service" .) }}.{{ .Release.Namespace }}.svc
+         # Apply secure TLS configuration with cert-manager
+         insecureSkipVerify: false
+         ca:
+           secret:
+-            name: metrics-server-cert
++            name: {{ include "chart.resourceName" (list "metrics-server-cert" .) }}
+             key: ca.crt
+         cert:
+           secret:
+-            name: metrics-server-cert
++            name: {{ include "chart.resourceName" (list "metrics-server-cert" .) }}
+             key: tls.crt
+         keySecret:
+-          name: metrics-server-cert
++          name: {{ include "chart.resourceName" (list "metrics-server-cert" .) }}
+           key: tls.key
+         {{- else }}
+         # Development/Test mode (insecure configuration)
+diff --git a/dist/chart/templates/rbac/agent_admin_role.yaml b/deploy/chart/templates/rbac/agent_admin_role.yaml
+index 0bed9a3..9773f68 100755
+--- a/dist/chart/templates/rbac/agent_admin_role.yaml
++++ b/deploy/chart/templates/rbac/agent_admin_role.yaml
+@@ -11,7 +11,7 @@ kind: ClusterRole
+ metadata:
+   labels:
+     {{- include "chart.labels" . | nindent 4 }}
+-  name: agent-admin-role
++  name: {{ include "chart.resourceName" (list "agent-admin-role" .) }}
+ rules:
+ - apiGroups:
+   - as.agentstream.github.io
+diff --git a/dist/chart/templates/rbac/agent_editor_role.yaml b/deploy/chart/templates/rbac/agent_editor_role.yaml
+index 36b9edd..51513ab 100755
+--- a/dist/chart/templates/rbac/agent_editor_role.yaml
++++ b/deploy/chart/templates/rbac/agent_editor_role.yaml
+@@ -11,7 +11,7 @@ kind: ClusterRole
+ metadata:
+   labels:
+     {{- include "chart.labels" . | nindent 4 }}
+-  name: agent-editor-role
++  name: {{ include "chart.resourceName" (list "agent-editor-role" .) }}
+ rules:
+ - apiGroups:
+   - as.agentstream.github.io
+diff --git a/dist/chart/templates/rbac/agent_viewer_role.yaml b/deploy/chart/templates/rbac/agent_viewer_role.yaml
+index 49602f6..3eee5dd 100755
+--- a/dist/chart/templates/rbac/agent_viewer_role.yaml
++++ b/deploy/chart/templates/rbac/agent_viewer_role.yaml
+@@ -11,7 +11,7 @@ kind: ClusterRole
+ metadata:
+   labels:
+     {{- include "chart.labels" . | nindent 4 }}
+-  name: agent-viewer-role
++  name: {{ include "chart.resourceName" (list "agent-viewer-role" .) }}
+ rules:
+ - apiGroups:
+   - as.agentstream.github.io
+diff --git a/dist/chart/templates/rbac/leader_election_role.yaml b/deploy/chart/templates/rbac/leader_election_role.yaml
+index bfe0f9d..a86023f 100755
+--- a/dist/chart/templates/rbac/leader_election_role.yaml
++++ b/deploy/chart/templates/rbac/leader_election_role.yaml
+@@ -6,7 +6,7 @@ metadata:
+   labels:
+     {{- include "chart.labels" . | nindent 4 }}
+   namespace: {{ .Release.Namespace }}
+-  name: operator-leader-election-role
++  name: {{ include "chart.resourceName" (list "operator-leader-election-role" .) }}
+ rules:
+ - apiGroups:
+   - ""
+diff --git a/dist/chart/templates/rbac/leader_election_role_binding.yaml b/deploy/chart/templates/rbac/leader_election_role_binding.yaml
+index 7982189..259dfba 100755
+--- a/dist/chart/templates/rbac/leader_election_role_binding.yaml
++++ b/deploy/chart/templates/rbac/leader_election_role_binding.yaml
+@@ -5,13 +5,13 @@ metadata:
+   labels:
+     {{- include "chart.labels" . | nindent 4 }}
+   namespace: {{ .Release.Namespace }}
+-  name: operator-leader-election-rolebinding
++  name: {{ include "chart.resourceName" (list "operator-leader-election-rolebinding" .) }}
+ roleRef:
+   apiGroup: rbac.authorization.k8s.io
+   kind: Role
+-  name: operator-leader-election-role
++  name: {{ include "chart.resourceName" (list "operator-leader-election-role" .) }}
+ subjects:
+ - kind: ServiceAccount
+-  name: as-operator-controller-manager
+-  namespace: as
++  name: {{ include "chart.resourceName" (list .Values.controllerManager.serviceAccountName .) }}
++  namespace: {{ .Release.Namespace }}
+ {{- end -}}
+diff --git a/dist/chart/templates/rbac/metrics_auth_role.yaml b/deploy/chart/templates/rbac/metrics_auth_role.yaml
+index b0c7913..5f2136c 100755
+--- a/dist/chart/templates/rbac/metrics_auth_role.yaml
++++ b/deploy/chart/templates/rbac/metrics_auth_role.yaml
+@@ -4,7 +4,7 @@ kind: ClusterRole
+ metadata:
+   labels:
+     {{- include "chart.labels" . | nindent 4 }}
+-  name: operator-metrics-auth-role
++  name: {{ include "chart.resourceName" (list "operator-metrics-auth-role" .) }}
+ rules:
+ - apiGroups:
+   - authentication.k8s.io
+diff --git a/dist/chart/templates/rbac/metrics_auth_role_binding.yaml b/deploy/chart/templates/rbac/metrics_auth_role_binding.yaml
+index 8561244..52a8580 100755
+--- a/dist/chart/templates/rbac/metrics_auth_role_binding.yaml
++++ b/deploy/chart/templates/rbac/metrics_auth_role_binding.yaml
+@@ -4,13 +4,13 @@ kind: ClusterRoleBinding
+ metadata:
+   labels:
+     {{- include "chart.labels" . | nindent 4 }}
+-  name: operator-metrics-auth-rolebinding
++  name: {{ include "chart.resourceName" (list "operator-metrics-auth-rolebinding" .) }}
+ roleRef:
+   apiGroup: rbac.authorization.k8s.io
+   kind: ClusterRole
+-  name: operator-metrics-auth-role
++  name: {{ include "chart.resourceName" (list "operator-metrics-auth-role" .) }}
+ subjects:
+ - kind: ServiceAccount
+-  name: as-operator-controller-manager
+-  namespace: as
++  name: {{ include "chart.resourceName" (list .Values.controllerManager.serviceAccountName .) }}
++  namespace: {{ .Release.Namespace }}
+ {{- end -}}
+diff --git a/dist/chart/templates/rbac/metrics_reader_role.yaml b/deploy/chart/templates/rbac/metrics_reader_role.yaml
+index 1f0a0f5..9e0d050 100755
+--- a/dist/chart/templates/rbac/metrics_reader_role.yaml
++++ b/deploy/chart/templates/rbac/metrics_reader_role.yaml
+@@ -4,7 +4,7 @@ kind: ClusterRole
+ metadata:
+   labels:
+     {{- include "chart.labels" . | nindent 4 }}
+-  name: operator-metrics-reader
++  name: {{ include "chart.resourceName" (list "operator-metrics-reader" .) }}
+ rules:
+ - nonResourceURLs:
+   - "/metrics"
+diff --git a/dist/chart/templates/rbac/role.yaml b/deploy/chart/templates/rbac/role.yaml
+index d3a5593..0425c7e 100755
+--- a/dist/chart/templates/rbac/role.yaml
++++ b/deploy/chart/templates/rbac/role.yaml
+@@ -5,7 +5,7 @@ kind: ClusterRole
+ metadata:
+   labels:
+     {{- include "chart.labels" . | nindent 4 }}
+-  name: operator-manager-role
++  name: {{ include "chart.resourceName" (list "operator-manager-role" .) }}
+ rules:
+ - apiGroups:
+   - as.agentstream.github.io
+@@ -33,32 +33,4 @@ rules:
+   - get
+   - patch
+   - update
+-- apiGroups:
+-  - fs.functionstream.github.io
+-  resources:
+-  - functions
+-  verbs:
+-  - create
+-  - delete
+-  - get
+-  - list
+-  - patch
+-  - update
+-  - watch
+-- apiGroups:
+-  - fs.functionstream.github.io
+-  resources:
+-  - functions/status
+-  verbs:
+-  - get
+-  - patch
+-  - update
+-- apiGroups:
+-  - fs.functionstream.github.io
+-  resources:
+-  - packages
+-  verbs:
+-  - get
+-  - list
+-  - watch
+ {{- end -}}
+diff --git a/dist/chart/templates/rbac/role_binding.yaml b/deploy/chart/templates/rbac/role_binding.yaml
+index 679cff0..e758800 100755
+--- a/dist/chart/templates/rbac/role_binding.yaml
++++ b/deploy/chart/templates/rbac/role_binding.yaml
+@@ -4,13 +4,13 @@ kind: ClusterRoleBinding
+ metadata:
+   labels:
+     {{- include "chart.labels" . | nindent 4 }}
+-  name: operator-manager-rolebinding
++  name: {{ include "chart.resourceName" (list "operator-manager-rolebinding" .) }}
+ roleRef:
+   apiGroup: rbac.authorization.k8s.io
+   kind: ClusterRole
+-  name: operator-manager-role
++  name: {{ include "chart.resourceName" (list "operator-manager-role" .) }}
+ subjects:
+ - kind: ServiceAccount
+-  name: as-operator-controller-manager
+-  namespace: as
++  name: {{ include "chart.resourceName" (list .Values.controllerManager.serviceAccountName .) }}
++  namespace: {{ .Release.Namespace }}
+ {{- end -}}
+diff --git a/dist/chart/templates/rbac/service_account.yaml b/deploy/chart/templates/rbac/service_account.yaml
+index b929552..772b77a 100755
+--- a/dist/chart/templates/rbac/service_account.yaml
++++ b/deploy/chart/templates/rbac/service_account.yaml
+@@ -4,6 +4,12 @@ kind: ServiceAccount
+ metadata:
+   labels:
+     {{- include "chart.labels" . | nindent 4 }}
+-  name: as-operator-controller-manager
+-  namespace: as
++  {{- if and .Values.controllerManager.serviceAccount .Values.controllerManager.serviceAccount.annotations }}
++  annotations:
++    {{- range $key, $value := .Values.controllerManager.serviceAccount.annotations }}
++    {{ $key }}: {{ $value }}
++    {{- end }}
++  {{- end }}
++  name: {{ include "chart.resourceName" (list .Values.controllerManager.serviceAccountName .) }}
++  namespace: {{ .Release.Namespace }}
+ {{- end -}}
+diff --git a/deploy/chart/test-prefix-values.yaml b/deploy/chart/test-prefix-values.yaml
+new file mode 100644
+index 0000000..9a3a899
+--- /dev/null
++++ b/deploy/chart/test-prefix-values.yaml
+@@ -0,0 +1,33 @@
++# Test values file to demonstrate resource prefix functionality
++global:
++  namePrefix: "my-prefix"
++
++controllerManager:
++  replicas: 1
++  container:
++    image:
++      repository: controller
++      tag: latest
++    args:
++      - "--leader-elect"
++      - "--metrics-bind-address=:8443"
++      - "--health-probe-bind-address=:8081"
++
++rbac:
++  enable: true
++
++crd:
++  enable: true
++  keep: true
++
++metrics:
++  enable: true
++
++prometheus:
++  enable: true
++
++certmanager:
++  enable: true
++
++networkPolicy:
++  enable: true 
+\ No newline at end of file
+diff --git a/dist/chart/values.yaml b/deploy/chart/values.yaml
+index 5b5446c..18a1707 100644
+--- a/dist/chart/values.yaml
++++ b/deploy/chart/values.yaml
+@@ -1,9 +1,16 @@
++# [GLOBAL]: Global configuration options
++global:
++  # Resource name prefix. If not set, defaults to the Helm release name.
++  # This prefix will be applied to all resource names to avoid conflicts
++  # when deploying multiple instances of the operator.
++  namePrefix: ""
++
+ # [MANAGER]: Manager Deployment Configurations
+ controllerManager:
+   replicas: 1
+   container:
+     image:
+-      repository: controller
++      repository: agentstream/operator
+       tag: latest
+     args:
+       - "--leader-elect"

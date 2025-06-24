@@ -1,0 +1,136 @@
+import asyncio
+import json
+from typing import Dict, Any
+from function_stream import FSFunction, FSContext, FSModule, SourceSpec, PulsarSourceConfig
+from google.adk import Agent, Runner
+from google.adk.sessions import InMemorySessionService
+from google.genai import types
+from google.adk.tools.tool_context import ToolContext
+from fs_function_tool import FSFunctionTool
+from pulsar_rpc import PulsarRPCManager
+import uuid
+import _jsonnet
+import os
+from config import AgentConfig
+
+APP_NAME = "summary_agent"
+USER_ID = "user1234"
+
+class AgentFunction(FSModule):
+    def __init__(self):
+        self.rpc_manager = None
+        self.config = None
+        self.session_service = None
+        self.agent_ctx = None
+        self.runner = None
+        self.outputMap: Dict[str, str] = {}
+
+    def output_tool(self, message: dict, tool_context: ToolContext) -> dict:
+        """A tool for output message. If users ask you to output messages, you SHOULD use this tool. The message MUST be a json format.
+
+        Args:
+            message (dict): The message to output
+            tool_context (ToolContext): The tool context to use
+        """
+        session_id = tool_context._invocation_context.session.id
+        self.outputMap[session_id] = json.dumps(message)
+        return {"result": "success"}
+
+    def init(self, context: FSContext):
+        self.config = AgentConfig.model_validate(context.get_configs())
+        self.rpc_manager = PulsarRPCManager(
+            service_url=self.config.pulsarRpc.serviceUrl,
+            response_topic=self.config.responseSource.pulsar.topic,
+        )
+        self.session_service = InMemorySessionService()
+        self.runner = None
+
+        if self.config.model.googleApiKey:
+            os.environ["GOOGLE_API_KEY"] = self.config.model.googleApiKey
+
+        tools = []
+        self.agent_ctx = self.config.agent
+        for n, f in self.agent_ctx.tools.items():
+            tools.append(FSFunctionTool(name=n, ctx=f, rpc_manager=self.rpc_manager))
+        tools.append(self.output_tool)
+        root_agent = Agent(
+            name=self.agent_ctx.name,
+            model=self.config.model.model,
+            description=self.agent_ctx.description,
+            instruction=self.agent_ctx.instruction + "\nYou MUST use the output_tool to output any messages/output",
+            tools=tools,
+        )
+        self.runner = Runner(agent=root_agent, app_name=APP_NAME, session_service=self.session_service)
+
+    async def process(self, context: FSContext, data: Dict[str, Any]) -> Dict[str, Any] | None:
+        input = json.dumps(data, ensure_ascii=False)
+        content = types.Content(role='user',
+                                parts=[types.Part(text=input)])
+        session_id = str(uuid.uuid4())
+        await self.session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=session_id)
+        final_response = None
+        agent_event_generator = self.runner.run_async(user_id=USER_ID, session_id=session_id, new_message=content)
+        async for event in agent_event_generator:
+            if event.is_final_response():
+                final_response = event.content.parts[0].text
+                break
+        if final_response:
+            # Apply post-processing if configured
+            output = self.outputMap.pop(session_id, final_response).lstrip("```json\n").rstrip("```")
+
+            if self.agent_ctx.postProcess and self.agent_ctx.postProcess.jsonnet:
+                try:
+                    code = f'''
+local input = {input};
+local agent_output = {output};
+{self.agent_ctx.postProcess.jsonnet}
+                    '''
+                    # Evaluate the jsonnet script with the response data
+                    processed_response = _jsonnet.evaluate_snippet(
+                        "post_process",  # filename for stack traces
+                        code
+                    )
+                    return json.loads(processed_response)
+                except Exception as e:
+                    raise Exception(f"Error in post-processing: {e}")
+            else:
+                return json.loads(output)
+
+        return None
+
+    async def close(self):
+        """Close the resources used by the agent function."""
+        if self.runner:
+            await self.runner.close()
+        if self.session_service:
+            await self.session_service.close()
+        if self.rpc_manager:
+            await self.rpc_manager.close()
+
+
+async def main():
+    agent_function = AgentFunction()
+
+    # Initialize the FunctionStream function
+    function = FSFunction(
+        process_funcs={
+            'agent': agent_function,
+        },
+    )
+
+    try:
+        print("Starting agent function service...")
+        await function.start()
+    except Exception as e:
+        print(f"\nAn error occurred: {e}")
+    finally:
+        await function.close()
+        await agent_function.close()
+
+
+if __name__ == "__main__":
+    try:
+        # Run the main function in an asyncio event loop
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\nService stopped")

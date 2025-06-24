@@ -1,0 +1,26 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  operator-test:
+    name: Run on Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@v4
+        working-directory: ./operator
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        working-directory: ./operator
+        with:
+          go-version-file: go.mod
+
+      - name: Running Tests
+        working-directory: ./operator
+        run: |
+          go mod tidy
+          make test

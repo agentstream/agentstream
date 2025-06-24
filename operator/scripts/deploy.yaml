@@ -1,0 +1,635 @@
+---
+# Source: operator/templates/namespace/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: agent-stream
+---
+# Source: operator/templates/rbac/service_account.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/version: "0.1.0"
+    helm.sh/chart: "0.1.0"
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/instance: agentstream
+    app.kubernetes.io/managed-by: Helm
+  name: agentstream-operator
+  namespace: agent-stream
+---
+# Source: operator/templates/crd/as.agentstream.github.io_agents.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    app.kubernetes.io/version: "0.1.0"
+    helm.sh/chart: "0.1.0"
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/instance: agentstream
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/resource-policy": keep
+    controller-gen.kubebuilder.io/version: v0.17.2
+  name: agents.as.agentstream.github.io
+spec:
+  group: as.agentstream.github.io
+  names:
+    kind: Agent
+    listKind: AgentList
+    plural: agents
+    singular: agent
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Agent is the Schema for the agents API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AgentSpec defines the desired state of Agent.
+            properties:
+              description:
+                description: Description of the agent
+                type: string
+              displayName:
+                description: Display name of the agent
+                type: string
+              instruction:
+                type: string
+              model:
+                properties:
+                  googleApiKey:
+                    type: string
+                  model:
+                    type: string
+                required:
+                - model
+                type: object
+              postProcess:
+                properties:
+                  jsonnet:
+                    type: string
+                type: object
+              requestSource:
+                description: Request source
+                properties:
+                  pulsar:
+                    description: Pulsar source specification
+                    properties:
+                      topic:
+                        description: Topic name
+                        type: string
+                    required:
+                    - topic
+                    type: object
+                type: object
+              responseSource:
+                description: SourceSpec defines a source or sink specification
+                properties:
+                  pulsar:
+                    description: Pulsar source specification
+                    properties:
+                      topic:
+                        description: Topic name
+                        type: string
+                    required:
+                    - topic
+                    type: object
+                type: object
+              sink:
+                description: Sink specifies the sink configuration
+                properties:
+                  pulsar:
+                    description: Pulsar sink specification
+                    properties:
+                      topic:
+                        description: Topic name
+                        type: string
+                    required:
+                    - topic
+                    type: object
+                type: object
+              sources:
+                description: List of sources
+                items:
+                  description: SourceSpec defines a source or sink specification
+                  properties:
+                    pulsar:
+                      description: Pulsar source specification
+                      properties:
+                        topic:
+                          description: Topic name
+                          type: string
+                      required:
+                      - topic
+                      type: object
+                  type: object
+                type: array
+              subscriptionName:
+                type: string
+              tools:
+                items:
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
+            required:
+            - description
+            - instruction
+            - model
+            type: object
+          status:
+            description: AgentStatus defines the observed state of Agent.
+            properties:
+              functionStatus:
+                description: FunctionStatus defines the observed state of Function
+                properties:
+                  availableReplicas:
+                    description: Number of available pods (ready for at least minReadySeconds)
+                    format: int32
+                    type: integer
+                  observedGeneration:
+                    description: Most recent generation observed for this Function
+                    format: int64
+                    type: integer
+                  readyReplicas:
+                    description: Total number of ready pods
+                    format: int32
+                    type: integer
+                  replicas:
+                    description: Total number of non-terminated pods targeted by this
+                      deployment
+                    format: int32
+                    type: integer
+                  updatedReplicas:
+                    description: Total number of updated pods
+                    format: int32
+                    type: integer
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+# Source: operator/templates/rbac/agent_admin_role.yaml
+# This rule is not used by the project operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants full permissions ('*') over as.agentstream.github.io.
+# This role is intended for users authorized to modify roles and bindings within the cluster,
+# enabling them to delegate specific permissions to other users or groups as needed.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/version: "0.1.0"
+    helm.sh/chart: "0.1.0"
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/instance: agentstream
+    app.kubernetes.io/managed-by: Helm
+  name: agentstream-as-agent-admin-role
+rules:
+- apiGroups:
+  - as.agentstream.github.io
+  resources:
+  - agents
+  verbs:
+  - '*'
+- apiGroups:
+  - as.agentstream.github.io
+  resources:
+  - agents/status
+  verbs:
+  - get
+---
+# Source: operator/templates/rbac/agent_editor_role.yaml
+# This rule is not used by the project operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants permissions to create, update, and delete resources within the as.agentstream.github.io.
+# This role is intended for users who need to manage these resources
+# but should not control RBAC or manage permissions for others.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/version: "0.1.0"
+    helm.sh/chart: "0.1.0"
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/instance: agentstream
+    app.kubernetes.io/managed-by: Helm
+  name: agentstream-as-agent-editor-role
+rules:
+- apiGroups:
+  - as.agentstream.github.io
+  resources:
+  - agents
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - as.agentstream.github.io
+  resources:
+  - agents/status
+  verbs:
+  - get
+---
+# Source: operator/templates/rbac/agent_viewer_role.yaml
+# This rule is not used by the project operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants read-only access to as.agentstream.github.io resources.
+# This role is intended for users who need visibility into these resources
+# without permissions to modify them. It is ideal for monitoring purposes and limited-access viewing.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/version: "0.1.0"
+    helm.sh/chart: "0.1.0"
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/instance: agentstream
+    app.kubernetes.io/managed-by: Helm
+  name: agentstream-as-agent-viewer-role
+rules:
+- apiGroups:
+  - as.agentstream.github.io
+  resources:
+  - agents
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - as.agentstream.github.io
+  resources:
+  - agents/status
+  verbs:
+  - get
+---
+# Source: operator/templates/rbac/metrics_auth_role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/version: "0.1.0"
+    helm.sh/chart: "0.1.0"
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/instance: agentstream
+    app.kubernetes.io/managed-by: Helm
+  name: agentstream-operator-metrics-auth-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+# Source: operator/templates/rbac/metrics_reader_role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/version: "0.1.0"
+    helm.sh/chart: "0.1.0"
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/instance: agentstream
+    app.kubernetes.io/managed-by: Helm
+  name: agentstream-operator-metrics-reader
+rules:
+- nonResourceURLs:
+  - "/metrics"
+  verbs:
+  - get
+---
+# Source: operator/templates/rbac/role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/version: "0.1.0"
+    helm.sh/chart: "0.1.0"
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/instance: agentstream
+    app.kubernetes.io/managed-by: Helm
+  name: agentstream-as-operator-manager-role
+rules:
+- apiGroups:
+  - as.agentstream.github.io
+  resources:
+  - agents
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - as.agentstream.github.io
+  resources:
+  - agents/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - as.agentstream.github.io
+  resources:
+  - agents/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - fs.functionstream.github.io
+  resources:
+  - functions
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - fs.functionstream.github.io
+  resources:
+  - packages
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - fs.functionstream.github.io
+  resources:
+  - functions/status
+  verbs:
+  - get
+- apiGroups:
+  - fs.functionstream.github.io
+  resources:
+  - packages/status
+  verbs:
+  - get
+---
+# Source: operator/templates/rbac/metrics_auth_role_binding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/version: "0.1.0"
+    helm.sh/chart: "0.1.0"
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/instance: agentstream
+    app.kubernetes.io/managed-by: Helm
+  name: agentstream-as-operator-metrics-auth-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: agentstream-as-operator-metrics-auth-role
+subjects:
+- kind: ServiceAccount
+  name: agentstream-operator
+  namespace: agent-stream
+---
+# Source: operator/templates/rbac/role_binding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/version: "0.1.0"
+    helm.sh/chart: "0.1.0"
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/instance: agentstream
+    app.kubernetes.io/managed-by: Helm
+  name: agentstream-as-operator-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: agentstream-as-operator-manager-role
+subjects:
+- kind: ServiceAccount
+  name: agentstream-operator
+  namespace: agent-stream
+---
+# Source: operator/templates/rbac/leader_election_role.yaml
+# permissions to do leader election.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/version: "0.1.0"
+    helm.sh/chart: "0.1.0"
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/instance: agentstream
+    app.kubernetes.io/managed-by: Helm
+  namespace: agent-stream
+  name: agentstream-as-operator-leader-election-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+# Source: operator/templates/rbac/leader_election_role_binding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/version: "0.1.0"
+    helm.sh/chart: "0.1.0"
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/instance: agentstream
+    app.kubernetes.io/managed-by: Helm
+  namespace: agent-stream
+  name: agentstream-as-operator-leader-election-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: agentstream-as-operator-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: agentstream-operator
+  namespace: agent-stream
+---
+# Source: operator/templates/metrics/metrics-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: operator-controller-manager-metrics-service
+  namespace: agent-stream
+  labels:
+    app.kubernetes.io/version: "0.1.0"
+    helm.sh/chart: "0.1.0"
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/instance: agentstream
+    app.kubernetes.io/managed-by: Helm
+spec:
+  ports:
+    - port: 8443
+      targetPort: 8443
+      protocol: TCP
+      name: https
+  selector:
+    control-plane: controller-manager
+---
+# Source: operator/templates/manager/manager.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-stream
+  namespace: agent-stream
+  labels:
+    app.kubernetes.io/version: "0.1.0"
+    helm.sh/chart: "0.1.0"
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/instance: agentstream
+    app.kubernetes.io/managed-by: Helm
+    control-plane: controller-manager
+spec:
+  replicas:  1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: operator
+      app.kubernetes.io/instance: agentstream
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        app.kubernetes.io/version: "0.1.0"
+        helm.sh/chart: "0.1.0"
+        app.kubernetes.io/name: operator
+        app.kubernetes.io/instance: agentstream
+        app.kubernetes.io/managed-by: Helm
+        control-plane: controller-manager
+    spec:
+      containers:
+        - name: manager
+          args:
+            - --leader-elect
+            - --metrics-bind-address=:8443
+            - --health-probe-bind-address=:8081
+          command:
+            - /manager
+          image: agentstream/operator:latest
+          env:
+            - name: PULSAR_SERVICE_URL
+              value: pulsar://fs-pulsar-standalone.fs.svc.cluster.local:6650
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: agentstream-operator
+      terminationGracePeriodSeconds: 10
+---
+# Source: operator/templates/prometheus/monitor.yaml
+# To integrate with Prometheus.
+---
+# Source: operator/templates/agent/package.yaml
+apiVersion: fs.functionstream.github.io/v1alpha1
+kind: Package
+metadata:
+  name: agent
+spec:
+  displayName: AI Agent
+  logo: ""
+  description: "A function package for string processing."
+  functionType:
+    cloud:
+      image: "agentstream/agent:latest"
+  modules:
+    agent:
+      displayName: AI Agent

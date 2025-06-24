@@ -1,0 +1,32 @@
+config:
+    agent:
+        description: An agent that can answer user questions about the current time.
+        instruction: You are a helpful agent who can answer user questions about the time
+        name: time_agent
+        tools:
+            current-time-function:
+                description: |4-
+                    A tool that returns the current time.
+                requestSource: request_current_time
+    model:
+        googleApiKey: AIzaSyAk-iIAZOxUjs9MdeEtQ2AFScz8TG6BnU4
+        model: gemini-2.0-flash
+    pulsarRpc:
+        authParams: ""
+        authPlugin: ""
+        serviceUrl: pulsar://192.168.31.80:6650
+    responseSource:
+        pulsar:
+            topic: agent_response
+description: An agent that can answer user questions about the current time.
+displayName: Get Current Time Agent
+module: agent
+package: agent
+pulsar:
+    authParams: ""
+    authPlugin: ""
+    serviceUrl: pulsar://192.168.31.80:6650
+requestSource:
+    pulsar:
+        topic: request_agent
+subscriptionName: fs-time-agent

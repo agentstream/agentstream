@@ -1,0 +1,14 @@
+apiVersion: fs.functionstream.github.io/v1alpha1
+kind: Package
+metadata:
+  name: agent
+spec:
+  displayName: AI Agent
+  logo: ""
+  description: "A function package for string processing."
+  functionType:
+    cloud:
+      image: "agentstream/agent:latest"
+  modules:
+    agent:
+      displayName: AI Agent
