@@ -9,7 +9,7 @@ import { notification } from '@/common/antd';
 import { StatusCodes } from 'http-status-codes';
 import { formLayout, placement } from '@/common/constants';
 import { KubernetesApiRespBody } from '@/common/types';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { flattenFunctionConfig } from '@/common/logics';
 
 type Props = {
@@ -28,8 +28,13 @@ const FunctionView = (props: Props) => {
   const config = Object.entries(data?.spec.config ?? {});
   const configIsNotEmpty = config.length > 0;
   const name = (data?.spec.displayName || data?.metadata.name) ?? '';
-  const [sources, setSources] = useState('');
-  const validSources = sources.split(',').filter(source => source !== '');
+  const [sources, setSources] = useState(new Array<string>());
+  useEffect(() => {
+    if (!props.inEditing) {
+      setSources(data?.spec.sources.map(source => source.pulsar.topic) ?? []);
+    }
+  }, [props.inEditing, data]);
+  const validSources = sources.filter(source => source !== '');
   function handleCancel() {
     form.resetFields();
     props.setInEditing(false);
@@ -99,7 +104,7 @@ const FunctionView = (props: Props) => {
           <Input
             placeholder="Please input topic names split by comma."
             value={sources}
-            onChange={event => setSources(event.target.value)}
+            onChange={event => setSources(event.target.value.split(','))}
           />
         ) : (
           data.spec.sources.map(item => {
