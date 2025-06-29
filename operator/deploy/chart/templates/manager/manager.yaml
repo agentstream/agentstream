@@ -36,6 +36,10 @@ spec:
           image: {{ .Values.controllerManager.container.image.repository }}:{{ .Values.controllerManager.container.image.tag }}
           {{- if .Values.controllerManager.container.env }}
           env:
+            {{- if .Values.pulsar.serviceUrl }}
+            - name: PULSAR_SERVICE_URL
+              value: {{ .Values.pulsar.serviceUrl }}
+            {{- end }}
             {{- range $key, $value := .Values.controllerManager.container.env }}
             - name: {{ $key }}
               value: {{ $value }}

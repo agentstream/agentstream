@@ -234,4 +234,4 @@ generate-helm:
 
 
 generate-deploy-yaml:
-	helm template agentstream ./deploy/chart --namespace agent-stream --create-namespace > ./scripts/deploy.yaml
+	helm template agentstream ./deploy/chart --namespace agent-stream --set createNamespace=true --create-namespace > ./scripts/deploy.yaml

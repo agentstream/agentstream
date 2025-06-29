@@ -5,6 +5,9 @@ global:
   # when deploying multiple instances of the operator.
   namePrefix: "as"
 
+pulsar:
+  serviceUrl: "pulsar://fs-pulsar-standalone.function-stream.svc.cluster.local:6650"
+
 # [MANAGER]: Manager Deployment Configurations
 controllerManager:
   replicas: 1
@@ -16,8 +19,6 @@ controllerManager:
       - "--leader-elect"
       - "--metrics-bind-address=:8443"
       - "--health-probe-bind-address=:8081"
-    env:
-      PULSAR_SERVICE_URL: "pulsar://fs-pulsar-standalone.fs.svc.cluster.local:6650"
     resources:
       limits:
         cpu: 500m
@@ -49,7 +50,7 @@ controllerManager:
   terminationGracePeriodSeconds: 10
   serviceAccountName: agentstream-operator
 
-createNamespace: true
+createNamespace: false
 
 # [RBAC]: To enable RBAC (Permissions) configurations
 rbac:

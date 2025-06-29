@@ -78,14 +78,80 @@ check_existing_resources() {
         print_warning "Some AgentStream/FunctionStream resources already exist"
         print_warning "This may cause conflicts during installation"
         echo
-        read -p "Do you want to continue anyway? (y/N): " -n 1 -r
+        read -p "Do you want to continue anyway? (Y/n): " -n 1 -r
         echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        if [[ ! $REPLY =~ ^[Yy]$ ]] && [[ ! -z $REPLY ]]; then
             print_status "Installation cancelled by user"
             exit 0
         fi
         echo
     fi
+}
+
+# Function to check if all cert-manager pods are ready
+check_cert_manager_pods() {
+    print_status "Waiting for all cert-manager pods to be ready..."
+    local wait_time=0
+    local max_wait=300
+    
+    while [ $wait_time -lt $max_wait ]; do
+        # Check if all cert-manager pods are running
+        local total_pods=$(kubectl get pods -n cert-manager --no-headers 2>/dev/null | wc -l)
+        local running_pods=$(kubectl get pods -n cert-manager --no-headers 2>/dev/null | grep -c "Running")
+        
+        if [ "$total_pods" -gt 0 ] && [ "$running_pods" -eq "$total_pods" ]; then
+            print_success "All cert-manager pods are running ($running_pods/$total_pods)"
+            return 0
+        fi
+        
+        sleep 10
+        wait_time=$((wait_time + 10))
+        echo -n "."
+    done
+    
+    print_error "Timeout waiting for cert-manager pods to be ready"
+    return 1
+}
+
+# Function to check if webhook service is ready
+check_webhook_service() {
+    local namespace="$1"
+    local service_name="$2"
+    local description="$3"
+    
+    print_status "Waiting for $description webhook service to be ready..."
+    local wait_time=0
+    local max_wait=300
+    
+    while [ $wait_time -lt $max_wait ]; do
+        # Check if the service exists
+        if kubectl get service "$service_name" -n "$namespace" >/dev/null 2>&1; then
+            # Check if the service has endpoints
+            local endpoints=$(kubectl get endpoints "$service_name" -n "$namespace" -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null)
+            if [ -n "$endpoints" ]; then
+                # Check if webhook configurations exist and are properly configured
+                if kubectl get mutatingwebhookconfiguration operator-mutating-webhook-configuration >/dev/null 2>&1; then
+                    if kubectl get validatingwebhookconfiguration operator-validating-webhook-configuration >/dev/null 2>&1; then
+                        # Check if webhook pods are running
+                        local webhook_pods=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=operator --no-headers 2>/dev/null | wc -l)
+                        local webhook_ready=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=operator --no-headers 2>/dev/null | grep -c "Running")
+                        if [ "$webhook_pods" -gt 0 ] && [ "$webhook_ready" -eq "$webhook_pods" ]; then
+                            print_success "$description webhook service is ready"
+                            return 0
+                        fi
+                    fi
+                fi
+            fi
+        fi
+        
+        sleep 10
+        wait_time=$((wait_time + 10))
+        echo -n "."
+    done
+    
+    print_warning "Timeout waiting for $description webhook service to be ready"
+    print_warning "Continuing anyway, but AgentStream installation may fail"
+    return 1
 }
 
 # Function to install cert-manager
@@ -99,6 +165,11 @@ install_cert_manager() {
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             print_status "Skipping cert-manager installation"
+            # Still check if existing cert-manager pods are ready
+            if ! check_cert_manager_pods; then
+                print_error "Existing cert-manager pods are not ready"
+                return 1
+            fi
             return 0
         fi
         echo
@@ -124,23 +195,13 @@ install_cert_manager() {
         return 1
     fi
     
-    # Wait for cert-manager pods to be ready
-    print_status "Waiting for cert-manager pods to be ready..."
-    local wait_time=0
-    local max_wait=300
+    # Wait for all cert-manager pods to be ready
+    if ! check_cert_manager_pods; then
+        print_error "cert-manager pods failed to become ready"
+        return 1
+    fi
     
-    while [ $wait_time -lt $max_wait ]; do
-        if kubectl wait --for=jsonpath='{.status.phase}=Running' pods -l app.kubernetes.io/instance=cert-manager -n cert-manager --timeout=30s >/dev/null 2>&1; then
-            print_success "cert-manager pods are running"
-            return 0
-        fi
-        sleep 10
-        wait_time=$((wait_time + 10))
-        echo -n "."
-    done
-    
-    print_error "Timeout waiting for cert-manager pods to be ready"
-    return 1
+    return 0
 }
 
 # Function to apply resources and wait for readiness
@@ -293,61 +354,21 @@ show_post_install_info() {
     echo
 }
 
-# Function to check webhook status
-check_webhook_status() {
-    print_status "Checking webhook status..."
-
-    # 1. Check service exists
-    if kubectl get service operator-webhook-service -n function-stream >/dev/null 2>&1; then
-        print_success "Webhook service exists"
-    else
-        print_error "Webhook service not found"
-        return 1
-    fi
-
-    # 2. Check endpoints has IP
-    endpoints=$(kubectl get endpoints operator-webhook-service -n function-stream -o jsonpath='{.subsets[*].addresses[*].ip}')
-    if [ -n "$endpoints" ]; then
-        print_success "Webhook service has endpoints: $endpoints"
-    else
-        print_error "Webhook service has no endpoints"
-        return 1
-    fi
-
-    # 3. Check pods running
-    pods=$(kubectl get pods -n function-stream -l app.kubernetes.io/name=operator --no-headers 2>/dev/null | wc -l)
-    running=$(kubectl get pods -n function-stream -l app.kubernetes.io/name=operator --no-headers 2>/dev/null | grep -c "Running")
-    if [ "$pods" -gt 0 ] && [ "$running" -eq "$pods" ]; then
-        print_success "All webhook pods are running ($running/$pods)"
-    else
-        print_error "Not all webhook pods are running ($running/$pods)"
-        return 1
-    fi
-
-    print_success "Webhook basic checks passed"
-    return 0
-}
-
-# Function to wait for webhook to be ready
-wait_for_webhook_ready() {
-    print_status "Waiting for webhook to be ready..."
-    local max_attempts=30
-    local attempt=1
-    
-    while [ $attempt -le $max_attempts ]; do
-        print_status "Attempt $attempt/$max_attempts: Checking webhook status..."
-        if check_webhook_status; then
-            print_success "Webhook is ready"
-            return 0
-        fi
-        
-        print_status "Attempt $attempt/$max_attempts: Webhook not ready yet, waiting..."
-        sleep 10
-        attempt=$((attempt + 1))
-    done
-    
-    print_error "Webhook failed to become ready after $max_attempts attempts"
-    return 1
+# Function to show cert-manager troubleshooting information
+show_cert_manager_troubleshooting() {
+    echo
+    print_warning "cert-manager troubleshooting information:"
+    echo
+    print_status "Check cert-manager pods:"
+    echo "  kubectl get pods -n cert-manager"
+    echo "  kubectl describe pods -n cert-manager"
+    echo "  kubectl logs -n cert-manager -l app.kubernetes.io/name=webhook"
+    echo "  kubectl logs -n cert-manager -l app.kubernetes.io/name=cainjector"
+    echo "  kubectl logs -n cert-manager -l app.kubernetes.io/name=controller"
+    echo
+    print_status "Restart cert-manager if needed:"
+    echo "  kubectl delete pods -n cert-manager"
+    echo
 }
 
 # Function to show webhook troubleshooting information
@@ -355,25 +376,99 @@ show_webhook_troubleshooting() {
     echo
     print_warning "Webhook troubleshooting information:"
     echo
-    print_status "Check webhook service:"
-    echo "  kubectl get service operator-webhook-service -n function-stream"
-    echo "  kubectl describe service operator-webhook-service -n function-stream"
-    echo
-    print_status "Check webhook pods:"
+    print_status "Check FunctionStream webhook pods:"
     echo "  kubectl get pods -n function-stream -l app.kubernetes.io/name=operator"
+    echo "  kubectl describe pods -n function-stream -l app.kubernetes.io/name=operator"
     echo "  kubectl logs -n function-stream -l app.kubernetes.io/name=operator"
     echo
     print_status "Check webhook configurations:"
-    echo "  kubectl get validatingwebhookconfiguration"
-    echo "  kubectl describe validatingwebhookconfiguration mpackage-v1alpha1.kb.io"
+    echo "  kubectl get mutatingwebhookconfiguration operator-mutating-webhook-configuration"
+    echo "  kubectl get validatingwebhookconfiguration operator-validating-webhook-configuration"
+    echo "  kubectl describe mutatingwebhookconfiguration operator-mutating-webhook-configuration"
+    echo "  kubectl describe validatingwebhookconfiguration operator-validating-webhook-configuration"
     echo
-    print_status "Check network connectivity:"
-    echo "  kubectl run test-pod --image=busybox --rm -i --restart=Never -- nslookup operator-webhook-service.function-stream.svc"
-    echo "  kubectl run test-pod --image=busybox --rm -i --restart=Never -- wget -qO- https://operator-webhook-service.function-stream.svc:443/healthz"
+    print_status "Check webhook service:"
+    echo "  kubectl get service operator-webhook-service -n function-stream"
+    echo "  kubectl get endpoints operator-webhook-service -n function-stream"
     echo
-    print_status "Check webhook admission logs:"
-    echo "  kubectl logs -n function-stream -l app.kubernetes.io/name=operator | grep webhook"
+    print_status "Restart webhook pods if needed:"
+    echo "  kubectl delete pods -n function-stream -l app.kubernetes.io/name=operator"
     echo
+}
+
+# Function to wait for webhook services to be fully initialized
+wait_for_webhook_initialization() {
+    local namespace="$1"
+    local description="$2"
+    
+    print_status "Waiting for $description webhook services to be fully initialized..."
+    local wait_time=0
+    local max_wait=300
+    local check_interval=5
+    
+    while [ $wait_time -lt $max_wait ]; do
+        local all_ready=true
+        local status_msg=""
+        
+        # Check if webhook configurations exist
+        if ! kubectl get mutatingwebhookconfiguration operator-mutating-webhook-configuration >/dev/null 2>&1; then
+            all_ready=false
+            status_msg="mutating webhook config missing"
+        elif ! kubectl get validatingwebhookconfiguration operator-validating-webhook-configuration >/dev/null 2>&1; then
+            all_ready=false
+            status_msg="validating webhook config missing"
+        elif ! kubectl get service operator-webhook-service -n "$namespace" >/dev/null 2>&1; then
+            all_ready=false
+            status_msg="webhook service missing"
+        else
+            # Check if webhook service has endpoints
+            local endpoints=$(kubectl get endpoints operator-webhook-service -n "$namespace" -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null)
+            if [ -z "$endpoints" ]; then
+                all_ready=false
+                status_msg="webhook service has no endpoints"
+            else
+                # Check if webhook pods are running and ready
+                local webhook_pods=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=operator --no-headers 2>/dev/null | wc -l)
+                local webhook_ready=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=operator --no-headers 2>/dev/null | grep -c "Running")
+                if [ "$webhook_pods" -eq 0 ]; then
+                    all_ready=false
+                    status_msg="no webhook pods found"
+                elif [ "$webhook_ready" -ne "$webhook_pods" ]; then
+                    all_ready=false
+                    status_msg="webhook pods not ready ($webhook_ready/$webhook_pods)"
+                else
+                    # Additional check: verify webhook configurations are properly configured
+                    local mutating_webhook_ready=$(kubectl get mutatingwebhookconfiguration operator-mutating-webhook-configuration -o jsonpath='{.webhooks[*].clientConfig.service.name}' 2>/dev/null | grep -c "operator-webhook-service" || echo "0")
+                    local validating_webhook_ready=$(kubectl get validatingwebhookconfiguration operator-validating-webhook-configuration -o jsonpath='{.webhooks[*].clientConfig.service.name}' 2>/dev/null | grep -c "operator-webhook-service" || echo "0")
+                    
+                    if [ "$mutating_webhook_ready" -eq 0 ] || [ "$validating_webhook_ready" -eq 0 ]; then
+                        all_ready=false
+                        status_msg="webhook configs not properly configured"
+                    fi
+                fi
+            fi
+        fi
+        
+        if [ "$all_ready" = true ]; then
+            print_success "$description webhook services are fully initialized"
+            return 0
+        fi
+        
+        # Show progress with status
+        if [ $((wait_time % 30)) -eq 0 ] && [ $wait_time -gt 0 ]; then
+            echo -n " ($status_msg)"
+        fi
+        
+        sleep $check_interval
+        wait_time=$((wait_time + check_interval))
+        echo -n "."
+    done
+    
+    echo
+    print_warning "Timeout waiting for $description webhook services to be fully initialized"
+    print_warning "Last status: $status_msg"
+    print_warning "Continuing anyway, but AgentStream installation may fail"
+    return 1
 }
 
 # Main script
@@ -407,9 +502,9 @@ main() {
     echo "  - cert-manager for certificate management"
     echo
     
-    read -p "Are you sure you want to continue? (y/N): " -n 1 -r
+    read -p "Are you sure you want to continue? (Y/n): " -n 1 -r
     echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    if [[ ! $REPLY =~ ^[Yy]$ ]] && [[ ! -z $REPLY ]]; then
         print_status "Installation cancelled by user"
         exit 0
     fi
@@ -422,6 +517,7 @@ main() {
     # Install cert-manager
     if ! install_cert_manager; then
         print_error "cert-manager installation failed"
+        show_cert_manager_troubleshooting
         exit 1
     fi
     echo
@@ -433,26 +529,24 @@ main() {
     fi
     echo
     
-    # Check webhook status before installing AgentStream
-    print_status "Checking webhook status before installing AgentStream..."
-    if ! wait_for_webhook_ready; then
-        print_error "Webhook is not ready. AgentStream installation may fail."
-        show_webhook_troubleshooting
+    # Wait for FunctionStream webhook services to be fully initialized
+    if ! wait_for_webhook_initialization "function-stream" "FunctionStream"; then
+        print_warning "FunctionStream webhook services may not be fully ready"
+        print_warning "AgentStream installation may fail due to webhook issues"
         echo
-        read -p "Do you want to continue with AgentStream installation anyway? (y/N): " -n 1 -r
+        read -p "Do you want to continue with AgentStream installation? (Y/n): " -n 1 -r
         echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            print_status "AgentStream installation cancelled by user"
-            print_status "Please fix webhook issues and run the script again"
-            exit 1
+        if [[ ! $REPLY =~ ^[Yy]$ ]] && [[ ! -z $REPLY ]]; then
+            print_status "Installation cancelled by user"
+            exit 0
         fi
         echo
     fi
+    echo
     
     # Install AgentStream
     if ! apply_and_wait "$SCRIPT_DIR/deploy.yaml" "AgentStream" "app.kubernetes.io/instance=agentstream" "agent-stream"; then
         print_error "AgentStream installation failed"
-        print_error "This may be due to webhook issues. Please check the troubleshooting information below:"
         show_webhook_troubleshooting
         exit 1
     fi
@@ -472,4 +566,4 @@ main() {
 trap 'print_error "Script interrupted by user"; exit 1' INT TERM
 
 # Run main function
-main "$@"
+main "$@" 
