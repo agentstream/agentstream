@@ -4,7 +4,7 @@ import { FunctionSpec, ResourceData, ResourceList } from '@/common/types';
 import { client } from '../infra/k8s';
 
 const version = 'v1alpha1';
-const group = 'fs.functionstream.github.io';
+const group = 'as.agentstream.github.io';
 const plural = 'agents';
 
 export async function listAllAgents() {
