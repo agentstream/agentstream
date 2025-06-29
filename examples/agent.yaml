@@ -1,0 +1,19 @@
+apiVersion: as.agentstream.github.io/v1alpha1
+kind: Agent
+metadata:
+  name: time-agent
+spec:
+  displayName: Get Current Time Agent
+  description: "An agent that can answer user questions about the current time."
+  instruction: "You are a helpful agent who can answer user questions about the time"
+  model:
+    model: "gemini-2.0-flash"
+    googleApiKey: "<Your-API-Key>"
+  requestSource:
+    pulsar:
+      topic: request_agent  # Topic name for request messages
+  responseSource:
+    pulsar:
+      topic: agent_response  # Topic name for response messages
+  tools:
+    - name: current-time-function

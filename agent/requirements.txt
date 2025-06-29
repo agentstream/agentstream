@@ -1,0 +1,15 @@
+# Core dependencies
+pydantic
+
+# Google ADK and GenAI dependencies
+google-adk
+google-genai
+
+# Apache Pulsar client
+pulsar-client
+
+# JSON processing
+jsonnet>=0.20.0
+
+# Type hints support
+typing-extensions

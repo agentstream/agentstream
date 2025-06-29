@@ -1,0 +1,67 @@
+{{- if .Values.rbac.enable }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  name: {{ .Release.Name }}-as-operator-manager-role
+rules:
+- apiGroups:
+  - as.agentstream.github.io
+  resources:
+  - agents
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - as.agentstream.github.io
+  resources:
+  - agents/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - as.agentstream.github.io
+  resources:
+  - agents/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - fs.functionstream.github.io
+  resources:
+  - functions
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - fs.functionstream.github.io
+  resources:
+  - packages
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - fs.functionstream.github.io
+  resources:
+  - functions/status
+  verbs:
+  - get
+- apiGroups:
+  - fs.functionstream.github.io
+  resources:
+  - packages/status
+  verbs:
+  - get
+{{- end -}}
