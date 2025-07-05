@@ -47,5 +47,5 @@ export function parseResourceData<T extends Specs>(item: ResourceData<T>): Resou
 }
 
 export function codeBlockInMarkdown(language: string, content: string): string {
-    return '```' + language + '\n' + content.trim() + '\n```';
+    return content ? '```' + language + '\n' + content.trim() + '\n```' : '';
 }
