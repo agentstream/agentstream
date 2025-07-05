@@ -11,6 +11,7 @@ import { formLayout, placement } from '@/common/constants';
 import { KubernetesApiRespBody } from '@/common/types';
 import { useEffect, useState } from 'react';
 import { flattenFunctionConfig } from '@/common/logics';
+import { getPackageDetails } from '@/server/logics/package';
 
 type Props = {
   name: string;
@@ -28,6 +29,16 @@ const FunctionView = (props: Props) => {
   const config = Object.entries(data?.spec.config ?? {});
   const configIsNotEmpty = config.length > 0;
   const name = (data?.spec.displayName || data?.metadata.name) ?? '';
+  const {
+    data: pakData,
+    isPending: pakIsPending,
+    isError: pakIsError
+  } = useQuery({
+    queryKey: [Module.Function, props.namespace, data?.spec.package],
+    queryFn: () =>
+      data?.spec.package ? getPackageDetails(props.namespace, data.spec.package) : null
+  });
+  const packageName = pakData?.spec.displayName || pakData?.metadata.name;
   const [sources, setSources] = useState(new Array<string>());
   useEffect(() => {
     if (!props.inEditing) {
@@ -92,7 +103,11 @@ const FunctionView = (props: Props) => {
         )}
       </Form.Item>
       <Form.Item label="Package">
-        {isPending ? <Skeleton.Input /> : <Tag color="blue">{data.spec.package}</Tag>}
+        {isPending || pakIsPending ? (
+          <Skeleton.Input />
+        ) : (
+          <Tag color={pakIsError ? 'error' : 'blue'}>{packageName}</Tag>
+        )}
       </Form.Item>
       <Form.Item label="Module">
         {isPending ? <Skeleton.Input /> : <Tag color="blue">{data.spec.module}</Tag>}
