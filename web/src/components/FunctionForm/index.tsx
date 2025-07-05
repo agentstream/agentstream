@@ -13,6 +13,7 @@ import { redirect, RedirectType } from 'next/navigation';
 import { KubernetesApiRespBody } from '@/common/types';
 import { formLayout, placement } from '@/common/constants';
 import { flattenFunctionConfig } from '@/common/logics';
+import { useUpdateEffect } from 'react-use';
 
 const FunctionForm = () => {
   const [form] = Form.useForm();
@@ -38,6 +39,9 @@ const FunctionForm = () => {
     label: item[1].displayName
   }));
   const [selectedModule, selectModule] = useState('');
+  useUpdateEffect(() => {
+    form.setFieldValue('module', '');
+  }, [form, selectedPackage]);
   const config = Object.entries(selectedPackages[0]?.spec.modules[selectedModule]?.config ?? {});
   const configIsNotEmpty = config.length > 0;
   const [sources, setSources] = useState('');
