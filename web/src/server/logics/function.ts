@@ -40,7 +40,7 @@ const configItemPrefix = 'config.';
 
 export async function createFunction(form: Record<string, string>): Promise<AgentStreamApiResp> {
     const { name, description, package: pak, module, sources, sink } = form;
-    const namespace = pak.split('/')[0];
+    const [namespace, packageName] = pak.split('/');
     const config = Object.entries(form)
         .filter(([key]) => key.startsWith(configItemPrefix))
         .map(([key, value]) => ({ [key.slice(configItemPrefix.length)]: value }))
@@ -56,7 +56,7 @@ export async function createFunction(form: Record<string, string>): Promise<Agen
             description: description ?? '',
             displayName: name,
             module,
-            package: pak,
+            package: packageName,
             sources: (sources ?? '')
                 .split(',')
                 .filter(item => item !== '')
@@ -125,7 +125,7 @@ export async function deleteFunction(name: string, namespace: string): Promise<A
 
 export async function updateFunction(form: Record<string, string>): Promise<AgentStreamApiResp> {
     const { name, description, package: pak, module, sources, sink } = form;
-    const namespace = pak.split('/')[0];
+    const [namespace, packageName] = pak.split('/');
     const config = Object.entries(form)
         .filter(([key]) => key.startsWith(configItemPrefix))
         .map(([key, value]) => ({ [key.slice(configItemPrefix.length)]: value }))
@@ -145,7 +145,7 @@ export async function updateFunction(form: Record<string, string>): Promise<Agen
             description: description ?? '',
             displayName: name,
             module,
-            package: pak,
+            package: packageName,
             sources: (sources ?? '')
                 .split(',')
                 .filter(item => item !== '')
