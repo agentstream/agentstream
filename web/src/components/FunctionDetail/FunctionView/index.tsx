@@ -4,7 +4,7 @@ import { Module } from '@/common/enum';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
 import { getFunctionDetails, updateFunction } from '@/server/logics/function';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Col, Form, Input, Row, Skeleton, Space, Tag } from 'antd';
+import { Button, Form, Input, Row, Skeleton, Space, Tag } from 'antd';
 import { notification } from '@/common/antd';
 import { StatusCodes } from 'http-status-codes';
 import { formLayout, placement } from '@/common/constants';
@@ -172,8 +172,7 @@ const FunctionView = (props: Props) => {
         </>
       )}
       <Form.Item label={null}>
-        <Row>
-          <Col span={props.inEditing ? 20 : 22} />
+        <Row justify="end">
           <Space>
             {props.inEditing ? <Button onClick={handleCancel}>Cancel</Button> : null}
             <Button type="primary" onClick={handleClick}>
