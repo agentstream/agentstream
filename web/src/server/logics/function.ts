@@ -124,13 +124,17 @@ export async function deleteFunction(name: string, namespace: string): Promise<A
 }
 
 export async function updateFunction(form: Record<string, string>): Promise<AgentStreamApiResp> {
-    const { name, namespace, description, package: pak, module, sources, sink } = form;
+    const { name, namespace, description, sources, sink } = form;
     const config = Object.entries(form)
         .filter(([key]) => key.startsWith(configItemPrefix))
         .map(([key, value]) => ({ [key.slice(configItemPrefix.length)]: value }))
         .reduce((obj1, obj2) => ({ ...obj1, ...obj2 }), {});
     const {
-        metadata: { resourceVersion }
+        metadata: { resourceVersion },
+        spec: {
+            package: pak,
+            module
+        }
     } = await getFunctionDetails(namespace, name);
     const body = {
         apiVersion: `${group}/${version}`,

@@ -60,8 +60,6 @@ const FunctionView = (props: Props) => {
     const resp = await updateFunction({
       name,
       namespace: props.namespace,
-      package: data?.spec.package ?? '',
-      module: data?.spec.module ?? '',
       ...form.getFieldsValue()
     });
     if (resp.code === StatusCodes.OK) {
