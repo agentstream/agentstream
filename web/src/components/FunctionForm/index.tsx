@@ -5,11 +5,11 @@ import { parseResourceData, routePathOfOverviewPage } from '@/common/utils';
 import { createFunction } from '@/server/logics/function';
 import { listAllPackages } from '@/server/logics/package';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Col, Form, Input, Row, Select, Tag } from 'antd';
+import { Button, Form, Input, Row, Select, Space, Tag } from 'antd';
 import { notification } from '@/common/antd';
 import { StatusCodes } from 'http-status-codes';
 import { useState } from 'react';
-import { redirect, RedirectType } from 'next/navigation';
+import { redirect, RedirectType, useRouter } from 'next/navigation';
 import { KubernetesApiRespBody } from '@/common/types';
 import { formLayout, placement } from '@/common/constants';
 import { flattenFunctionConfig } from '@/common/logics';
@@ -62,6 +62,7 @@ const FunctionForm = () => {
       });
     }
   }
+  const router = useRouter();
   return (
     <Form
       form={form}
@@ -135,11 +136,13 @@ const FunctionForm = () => {
           ))
         : null}
       <Form.Item label={null}>
-        <Row>
-          <Col span={22} />
-          <Button type="primary" htmlType="submit">
-            Submit
-          </Button>
+        <Row justify="end">
+          <Space>
+            <Button onClick={router.back}>Cancel</Button>
+            <Button type="primary" htmlType="submit">
+              Submit
+            </Button>
+          </Space>
         </Row>
       </Form.Item>
     </Form>
