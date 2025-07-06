@@ -36,7 +36,7 @@ export default function Page({ params }: { params: Promise<{ module: Module }> }
       return { [id]: logo };
     })
     .reduce((obj1, obj2) => ({ ...obj1, ...obj2 }), {});
-  const watchFunctionOverview = module === Module.Function;
+  const enableCreate = [Module.Function, Module.Agent].includes(module);
   return (
     <div className="overflow-auto w-full h-full">
       {isPending ? (
@@ -48,13 +48,13 @@ export default function Page({ params }: { params: Promise<{ module: Module }> }
           {data?.length > 0
             ? data.map(v => {
                 const info = parseResourceData(v as ResourceData<PackageSpec>);
-                if (watchFunctionOverview) {
+                if (enableCreate) {
                   info.logo = logos[(v as ResourceData<FunctionSpec>).spec.package];
                 }
                 return <ToolCard info={info} type={module} refresh={refetch} key={info.id} />;
               })
             : null}
-          {watchFunctionOverview ? <CreateCard type={module} /> : null}
+          {enableCreate ? <CreateCard type={module} /> : null}
         </div>
       )}
     </div>
