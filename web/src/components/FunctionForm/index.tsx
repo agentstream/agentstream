@@ -5,7 +5,7 @@ import { parseResourceData, routePathOfOverviewPage } from '@/common/utils';
 import { createFunction } from '@/server/logics/function';
 import { listAllPackages } from '@/server/logics/package';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Form, Input, Row, Select, Space, Tag } from 'antd';
+import { Button, Card, Form, Input, Row, Select, Space, Tag } from 'antd';
 import { notification } from '@/common/antd';
 import { StatusCodes } from 'http-status-codes';
 import { useState } from 'react';
@@ -126,15 +126,18 @@ const FunctionForm = () => {
         <Input placeholder="Please input a topic name." />
       </Form.Item>
       <Form.Item label="Configs" colon={false}>
-        {configIsNotEmpty ? null : <Input value="None" disabled={true} />}
+        {configIsNotEmpty ? (
+          <Card>
+            {config.map(([key]) => (
+              <Form.Item label={key} key={key} name={`config.${key}`}>
+                <Input />
+              </Form.Item>
+            ))}
+          </Card>
+        ) : (
+          <Input value="None" disabled={true} />
+        )}
       </Form.Item>
-      {configIsNotEmpty
-        ? config.map(([key]) => (
-            <Form.Item label={key} key={key} name={`config.${key}`}>
-              <Input />
-            </Form.Item>
-          ))
-        : null}
       <Form.Item label={null}>
         <Row justify="end">
           <Space>
