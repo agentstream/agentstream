@@ -124,8 +124,7 @@ export async function deleteFunction(name: string, namespace: string): Promise<A
 }
 
 export async function updateFunction(form: Record<string, string>): Promise<AgentStreamApiResp> {
-    const { name, description, package: pak, module, sources, sink } = form;
-    const [namespace, packageName] = pak.split('/');
+    const { name, namespace, description, package: pak, module, sources, sink } = form;
     const config = Object.entries(form)
         .filter(([key]) => key.startsWith(configItemPrefix))
         .map(([key, value]) => ({ [key.slice(configItemPrefix.length)]: value }))
@@ -145,7 +144,7 @@ export async function updateFunction(form: Record<string, string>): Promise<Agen
             description: description ?? '',
             displayName: name,
             module,
-            package: packageName,
+            package: pak,
             sources: (sources ?? '')
                 .split(',')
                 .filter(item => item !== '')
