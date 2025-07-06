@@ -39,6 +39,8 @@ const FunctionView = (props: Props) => {
       data?.spec.package ? getPackageDetails(props.namespace, data.spec.package) : null
   });
   const packageName = pakData?.spec.displayName || pakData?.metadata.name;
+  const moduleName =
+    (pakData?.spec.modules ?? {})[data?.spec.module ?? '']?.displayName ?? data?.spec.module;
   const [sources, setSources] = useState(new Array<string>());
   useEffect(() => {
     if (!props.inEditing) {
@@ -110,7 +112,7 @@ const FunctionView = (props: Props) => {
         )}
       </Form.Item>
       <Form.Item label="Module">
-        {isPending ? <Skeleton.Input /> : <Tag color="blue">{data.spec.module}</Tag>}
+        {isPending ? <Skeleton.Input /> : <Tag color="blue">{moduleName}</Tag>}
       </Form.Item>
       <Form.Item label="Sources" name="sources">
         {isPending ? (
