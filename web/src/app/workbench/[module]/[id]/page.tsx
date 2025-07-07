@@ -1,6 +1,7 @@
 'use client';
 
 import { Module } from '@/common/enum';
+import AgentDetail from '@/components/AgentDetail';
 import FunctionDetail from '@/components/FunctionDetail';
 import PackageDetail from '@/components/PackageDetail';
 import { useModule } from '@/hooks';
@@ -13,7 +14,7 @@ function detailPage(module: Module, name: string, namespace: string) {
     case Module.Function:
       return <FunctionDetail name={name} namespace={namespace} />;
     case Module.Agent:
-      return null;
+      return <AgentDetail name={name} namespace={namespace} />;
   }
 }
 
