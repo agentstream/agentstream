@@ -48,7 +48,7 @@ export default function Page({ params }: { params: Promise<{ module: Module }> }
           {data?.length > 0
             ? data.map(v => {
                 const info = parseResourceData(v as ResourceData<PackageSpec>);
-                if (enableCreate) {
+                if (module === Module.Function) {
                   info.logo = logos[(v as ResourceData<FunctionSpec>).spec.package];
                 }
                 return <ToolCard info={info} type={module} refresh={refetch} key={info.id} />;
