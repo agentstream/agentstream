@@ -8,7 +8,7 @@ import { Avatar, Card, Space, Typography } from 'antd';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import DeleteButton from '../DeleteButton';
-import { deleteFunctionInteraction } from '@/common/logics';
+import { deleteAgentInteraction, deleteFunctionInteraction } from '@/common/logics';
 
 type Props = {
   info: ResourceInfo;
@@ -28,7 +28,16 @@ const ToolCard = (props: Props) => {
   }
   async function handleDelete() {
     const [namespace, name] = props.info.id.split('/');
-    await deleteFunctionInteraction(name, namespace);
+    switch (props.type) {
+      case Module.Function:
+        await deleteFunctionInteraction(name, namespace);
+        break;
+      case Module.Agent:
+        await deleteAgentInteraction(name, namespace);
+        break;
+      default:
+        return;
+    }
     props.refresh();
   }
   return (
@@ -64,7 +73,7 @@ const ToolCard = (props: Props) => {
           {props.info.description}
         </Typography.Paragraph>
       </Space>
-      {props.type === Module.Function ? (
+      {[Module.Function, Module.Agent].includes(props.type) ? (
         <DeleteButton type={props.type} action={handleDelete}>
           <Icon
             component={DeleteOutlined}
