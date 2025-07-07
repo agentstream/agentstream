@@ -9,13 +9,15 @@ export type ResourceData<T extends Specs> = {
         uid: string;
         resourceVersion: string;
     };
-    spec: {
-        description: string;
-        displayName: string;
-    } & T;
+    spec: T;
 };
 
-export type PackageSpec = {
+type BaseSpec = {
+    description: string,
+    displayName: string
+}
+
+export type PackageSpec = BaseSpec & {
     functionType: {
         cloud: {
             image: string;
@@ -34,9 +36,13 @@ export type PackageSpec = {
     >;
 };
 
-export type FunctionSpec = {
+export type FunctionSpec = FunctionLikeSpec & {
     package: string;
     module: string;
+    config: Record<string, string>;
+};
+
+type FunctionLikeSpec = BaseSpec & {
     sources: {
         pulsar: {
             topic: string;
@@ -48,13 +54,28 @@ export type FunctionSpec = {
             topic: string;
         };
     };
-    config: Record<string, string>;
+}
+
+export type AgentSpec = FunctionLikeSpec & {
+    instruction: string,
+    model: Model,
+    tools: Tool[]
 };
+
+type Model = {
+    googleApiKey: string,
+    model: string
+}
+
+type Tool = {
+    name: string,
+    namespace: string
+}
 
 export type SpecMap = {
     [Module.Package]: PackageSpec;
     [Module.Function]: FunctionSpec;
-    [Module.Agent]: FunctionSpec;
+    [Module.Agent]: AgentSpec;
 };
 
 export type Specs = SpecMap[keyof SpecMap];
