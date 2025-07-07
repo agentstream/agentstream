@@ -3,6 +3,7 @@ import { notification } from 'antd';
 import { StatusCodes } from 'http-status-codes';
 import { KubernetesApiRespBody } from './types';
 import { placement } from './constants';
+import { deleteAgent } from '@/server/logics/agent';
 
 export async function deleteFunctionInteraction(name: string, namespace: string) {
   const resp = await deleteFunction(name, namespace);
@@ -13,7 +14,23 @@ export async function deleteFunctionInteraction(name: string, namespace: string)
     });
   } else {
     notification.error({
-      message: 'Delete failed!',
+      message: 'Delete Failed!',
+      description: (resp.data as KubernetesApiRespBody).message,
+      placement
+    });
+  }
+}
+
+export async function deleteAgentInteraction(name: string, namespace: string) {
+  const resp = await deleteAgent(name, namespace);
+  if (resp.code === StatusCodes.NO_CONTENT) {
+    notification.success({
+      message: 'Delete Success!',
+      placement
+    });
+  } else {
+    notification.error({
+      message: 'Delete Failed!',
       description: (resp.data as KubernetesApiRespBody).message,
       placement
     });
