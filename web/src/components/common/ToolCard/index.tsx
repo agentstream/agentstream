@@ -6,7 +6,7 @@ import { routePathOfDetailPage } from '@/common/utils';
 import Icon, { DeleteOutlined, QuestionCircleTwoTone } from '@ant-design/icons';
 import { Avatar, Card, Space, Typography } from 'antd';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import DeleteButton from '../DeleteButton';
 import { deleteAgentInteraction, deleteFunctionInteraction } from '@/common/logics';
 
@@ -14,6 +14,7 @@ type Props = {
   info: ResourceInfo;
   type: Module;
   refresh: () => void;
+  icon?: ReactNode;
 };
 
 const ToolCard = (props: Props) => {
@@ -49,7 +50,7 @@ const ToolCard = (props: Props) => {
               src={showPlaceHolder ? undefined : props.info.logo || null}
               shape="square"
               size={60}
-              icon={<QuestionCircleTwoTone />}
+              icon={props.icon ?? <QuestionCircleTwoTone />}
               onError={handleError}
             />
           }

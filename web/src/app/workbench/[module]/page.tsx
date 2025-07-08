@@ -10,6 +10,7 @@ import ToolCard from '@/components/common/ToolCard';
 import { listAllAgents } from '@/server/logics/agent';
 import { listAllFunctions } from '@/server/logics/function';
 import { listAllPackages } from '@/server/logics/package';
+import { RobotOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { use } from 'react';
 
@@ -51,7 +52,19 @@ export default function Page({ params }: { params: Promise<{ module: Module }> }
                 if (module === Module.Function) {
                   info.logo = logos[(v as ResourceData<FunctionSpec>).spec.package];
                 }
-                return <ToolCard info={info} type={module} refresh={refetch} key={info.id} />;
+                return (
+                  <ToolCard
+                    info={info}
+                    type={module}
+                    refresh={refetch}
+                    key={info.id}
+                    icon={
+                      module === Module.Agent ? (
+                        <RobotOutlined className="text-blue-lv6! bg-white! w-full! h-full! flex justify-center" />
+                      ) : undefined
+                    }
+                  />
+                );
               })
             : null}
           {enableCreate ? <CreateCard type={module} /> : null}
