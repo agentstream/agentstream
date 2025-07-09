@@ -1,12 +1,16 @@
 'use client';
 
-import { formLayout } from '@/common/constants';
-import { Module } from '@/common/enum';
+import { formLayout, placement } from '@/common/constants';
+import { googleAIModels, Module } from '@/common/enum';
+import { KubernetesApiRespBody } from '@/common/types';
+import { parseResourceData } from '@/common/utils';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
-import { getAgentDetails } from '@/server/logics/agent';
+import { getAgentDetails, updateAgent } from '@/server/logics/agent';
 import { listAllFunctions } from '@/server/logics/function';
 import { useQuery } from '@tanstack/react-query';
-import { Card, Form, Skeleton, Tag } from 'antd';
+import { Button, Card, Form, Input, notification, Row, Select, Skeleton, Space, Tag } from 'antd';
+import { StatusCodes } from 'http-status-codes';
+import { useEffect, useState } from 'react';
 
 type Props = {
   name: string;
@@ -17,7 +21,7 @@ type Props = {
 
 const AgentView = (props: Props) => {
   const [form] = Form.useForm();
-  const { data, isPending, isError } = useQuery({
+  const { data, isPending, isError, refetch } = useQuery({
     queryKey: [Module.Agent, props.namespace, props.name],
     queryFn: () => getAgentDetails(props.namespace, props.name)
   });
@@ -25,34 +29,126 @@ const AgentView = (props: Props) => {
     queryKey: [Module.Agent, 'config'],
     queryFn: listAllFunctions
   });
-  const funcNames = (funcData?.items ?? [])
+  const allFunctionsData = funcData?.items ?? [];
+  const funcNames = allFunctionsData
     .map(f => ({
       [`${f.metadata.namespace}/${f.metadata.name}`]: f.spec.displayName
     }))
     .reduce((obj1, obj2) => ({ ...obj1, ...obj2 }), {});
+  const [sources, setSources] = useState(new Array<string>());
+  useEffect(() => {
+    if (!props.inEditing) {
+      setSources(data?.spec.sources.map(source => source.pulsar.topic) ?? []);
+    }
+  }, [props.inEditing, data]);
+  const validSources = sources.filter(source => source !== '');
+  function handleCancel() {
+    form.resetFields();
+    props.setInEditing(false);
+  }
+  async function handleClick() {
+    if (!props.inEditing) {
+      props.setInEditing(true);
+      return;
+    }
+    const resp = await updateAgent({
+      name,
+      namespace: props.namespace,
+      ...form.getFieldsValue()
+    });
+    if (resp.code === StatusCodes.OK) {
+      notification.success({
+        message: 'Update Success!',
+        placement
+      });
+      refetch();
+      props.setInEditing(false);
+    } else {
+      notification.error({
+        message: 'Update failed!',
+        description: (resp.data as KubernetesApiRespBody).message,
+        placement
+      });
+    }
+  }
   const name = (data?.spec.displayName || data?.metadata.name) ?? '';
+  const modelOptions = googleAIModels.map(value => ({
+    value,
+    label: value
+  }));
+  const functionOptions = allFunctionsData.map(item => {
+    const { id, name } = parseResourceData(item);
+    return {
+      value: id,
+      label: name
+    };
+  });
+  const [selectedFunctions, selectFunction] = useState('');
   return isError || !data ? (
     <EmptyPlaceHolder />
   ) : (
-    <Form form={form} name={Module.Agent} {...formLayout}>
+    <Form
+      form={form}
+      name={Module.Agent}
+      {...formLayout}
+      initialValues={{
+        description: data.spec.description,
+        model: data.spec.model.model,
+        googleApiKey: data.spec.model.googleApiKey,
+        instruction: data.spec.instruction,
+        sources: data.spec.sources.map(item => item.pulsar.topic).join(','),
+        sink: data.spec.sink.pulsar.topic,
+        functions: data.spec.tools.map(item => `${item.namespace}/${item.name}`)
+      }}
+    >
       <Form.Item label="Name">
         {isPending ? <Skeleton.Input /> : <Tag color="blue">{name}</Tag>}
       </Form.Item>
       <Form.Item label="Description" name="description">
-        {isPending ? <Skeleton.Input /> : <Tag color="blue">{data.spec.description}</Tag>}
-      </Form.Item>
-      <Form.Item label="Model">
-        {isPending ? <Skeleton.Input /> : <Tag color="blue">{data.spec.model.model}</Tag>}
-      </Form.Item>
-      <Form.Item label="Google API Key">
-        {isPending ? <Skeleton.Input /> : <Tag color="blue">{data.spec.model.googleApiKey}</Tag>}
-      </Form.Item>
-      <Form.Item label="Instructions">
-        {isPending ? <Skeleton.Input /> : <Tag color="blue">{data.spec.instruction}</Tag>}
-      </Form.Item>
-      <Form.Item label="Sources">
         {isPending ? (
           <Skeleton.Input />
+        ) : props.inEditing ? (
+          <Input.TextArea rows={3} />
+        ) : (
+          <Tag color="blue">{data.spec.description}</Tag>
+        )}
+      </Form.Item>
+      <Form.Item label="Model" name="model">
+        {isPending ? (
+          <Skeleton.Input />
+        ) : props.inEditing ? (
+          <Select options={modelOptions} />
+        ) : (
+          <Tag color="blue">{data.spec.model.model}</Tag>
+        )}
+      </Form.Item>
+      <Form.Item label="Google API Key" name="googleApiKey">
+        {isPending ? (
+          <Skeleton.Input />
+        ) : props.inEditing ? (
+          <Input />
+        ) : (
+          <Tag color="blue">{data.spec.model.googleApiKey}</Tag>
+        )}
+      </Form.Item>
+      <Form.Item label="Instructions" name="instruction">
+        {isPending ? (
+          <Skeleton.Input />
+        ) : props.inEditing ? (
+          <Input.TextArea rows={3} />
+        ) : (
+          <Tag color="blue">{data.spec.instruction}</Tag>
+        )}
+      </Form.Item>
+      <Form.Item label="Sources" name="sources">
+        {isPending ? (
+          <Skeleton.Input />
+        ) : props.inEditing ? (
+          <Input
+            placeholder="Please input topic names split by comma."
+            value={sources}
+            onChange={event => setSources(event.target.value.split(','))}
+          />
         ) : (
           data.spec.sources.map(item => {
             const {
@@ -66,14 +162,37 @@ const AgentView = (props: Props) => {
           })
         )}
       </Form.Item>
-      <Form.Item label="Sink">
-        {isPending ? <Skeleton.Input /> : <Tag color="blue">{data.spec.sink.pulsar.topic}</Tag>}
+      {props.inEditing && validSources.length > 0 ? (
+        <Form.Item label=" " colon={false}>
+          {validSources.map(source => (
+            <Tag key={source} color="blue">
+              {source}
+            </Tag>
+          ))}
+        </Form.Item>
+      ) : null}
+      <Form.Item label="Sink" name="sink">
+        {isPending ? (
+          <Skeleton.Input />
+        ) : props.inEditing ? (
+          <Input placeholder="Please input a topic name." />
+        ) : (
+          <Tag color="blue">{data.spec.sink.pulsar.topic}</Tag>
+        )}
       </Form.Item>
       <Form.Item label="Tools" colon={false}>
         <Card>
-          <Form.Item label="Functions">
+          <Form.Item label="Functions" name="functions">
             {isPending || funcIsPending ? (
               <Skeleton />
+            ) : props.inEditing ? (
+              <Select
+                options={functionOptions}
+                loading={isPending}
+                value={selectedFunctions}
+                onChange={selectFunction}
+                mode="multiple"
+              />
             ) : (
               data.spec.tools.map(f => {
                 const id = `${f.namespace}/${f.name}`;
@@ -86,6 +205,16 @@ const AgentView = (props: Props) => {
             )}
           </Form.Item>
         </Card>
+      </Form.Item>
+      <Form.Item label={null}>
+        <Row justify="end">
+          <Space>
+            {props.inEditing ? <Button onClick={handleCancel}>Cancel</Button> : null}
+            <Button type="primary" onClick={handleClick}>
+              {props.inEditing ? 'Save' : 'Edit'}
+            </Button>
+          </Space>
+        </Row>
       </Form.Item>
     </Form>
   );
