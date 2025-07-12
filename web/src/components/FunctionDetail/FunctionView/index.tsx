@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button, Form, Input, Row, Skeleton, Space, Tag } from 'antd';
 import { notification } from '@/common/antd';
 import { formLayout, placement } from '@/common/constants';
-import { KubernetesApiRespBody } from '@/common/types';
+import { FunctionSpec, KubernetesApiRespBody, PackageSpec, ResourceData } from '@/common/types';
 import { useEffect, useState } from 'react';
 import { flattenFunctionConfig } from '@/common/logics';
 import { getPackageDetails } from '@/server/logics/package';
@@ -22,15 +22,21 @@ type Props = {
 
 const FunctionView = (props: Props) => {
   const [form] = Form.useForm();
-  const { data, isPending, isError, refetch } = useQuery({
+  const {
+    data: resp,
+    isPending,
+    isError,
+    refetch
+  } = useQuery({
     queryKey: [Module.Function, props.namespace, props.name],
     queryFn: () => getFunctionDetails(props.namespace, props.name)
   });
+  const data = resp?.data as ResourceData<FunctionSpec>;
   const config = Object.entries(data?.spec.config ?? {});
   const configIsNotEmpty = config.length > 0;
   const name = (data?.spec.displayName || data?.metadata.name) ?? '';
   const {
-    data: pakData,
+    data: pakResp,
     isPending: pakIsPending,
     isError: pakIsError
   } = useQuery({
@@ -38,6 +44,7 @@ const FunctionView = (props: Props) => {
     queryFn: () =>
       data?.spec.package ? getPackageDetails(props.namespace, data.spec.package) : null
   });
+  const pakData = pakResp?.data as ResourceData<PackageSpec>;
   const packageName = pakData?.spec.displayName || pakData?.metadata.name;
   const moduleName =
     (pakData?.spec.modules ?? {})[data?.spec.module ?? '']?.displayName ?? data?.spec.module;

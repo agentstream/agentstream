@@ -9,18 +9,23 @@ import { Button, Card, Form, Input, Row, Select, Space, Tag } from 'antd';
 import { notification } from '@/common/antd';
 import { useState } from 'react';
 import { redirect, RedirectType, useRouter } from 'next/navigation';
-import { CreateFunctionForm, KubernetesApiRespBody } from '@/common/types';
+import {
+  CreateFunctionForm,
+  KubernetesApiRespBody,
+  PackageSpec,
+  ResourceList
+} from '@/common/types';
 import { formLayout, placement } from '@/common/constants';
 import { flattenFunctionConfig } from '@/common/logics';
 import { useUpdateEffect } from 'react-use';
 
 const FunctionForm = () => {
   const [form] = Form.useForm();
-  const { data, isPending } = useQuery({
+  const { data: resp, isPending } = useQuery({
     queryKey: [Module.Function, 'create'],
     queryFn: listAllPackages
   });
-  const allPackagesData = data?.items ?? [];
+  const allPackagesData = (resp?.data as ResourceList<PackageSpec>).items ?? [];
   const packageOptions = allPackagesData.map(item => {
     const { id, name } = parseResourceData(item);
     return {

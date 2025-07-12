@@ -2,7 +2,13 @@
 
 import { formLayout, placement } from '@/common/constants';
 import { googleAIModels, Module } from '@/common/enum';
-import { KubernetesApiRespBody } from '@/common/types';
+import {
+  AgentSpec,
+  FunctionSpec,
+  KubernetesApiRespBody,
+  ResourceData,
+  ResourceList
+} from '@/common/types';
 import { isRequestSuccess, parseResourceData } from '@/common/utils';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
 import { getAgentDetails, updateAgent } from '@/server/logics/agent';
@@ -20,14 +26,21 @@ type Props = {
 
 const AgentView = (props: Props) => {
   const [form] = Form.useForm();
-  const { data, isPending, isError, refetch } = useQuery({
+  const {
+    data: resp,
+    isPending,
+    isError,
+    refetch
+  } = useQuery({
     queryKey: [Module.Agent, props.namespace, props.name],
     queryFn: () => getAgentDetails(props.namespace, props.name)
   });
-  const { data: funcData, isPending: funcIsPending } = useQuery({
+  const data = resp?.data as ResourceData<AgentSpec>;
+  const { data: funcResp, isPending: funcIsPending } = useQuery({
     queryKey: [Module.Agent, 'config'],
     queryFn: listAllFunctions
   });
+  const funcData = funcResp?.data as ResourceList<FunctionSpec>;
   const allFunctionsData = funcData?.items ?? [];
   const funcNames = allFunctionsData
     .map(f => ({
