@@ -2,7 +2,7 @@
 
 import { formLayout, placement } from '@/common/constants';
 import { googleAIModels, Module } from '@/common/enum';
-import { CreateAgentForm, KubernetesApiRespBody } from '@/common/types';
+import { CreateAgentForm, FunctionSpec, KubernetesApiRespBody, ResourceList } from '@/common/types';
 import { isRequestSuccess, parseResourceData, routePathOfOverviewPage } from '@/common/utils';
 import { createAgent } from '@/server/logics/agent';
 import { listAllFunctions } from '@/server/logics/function';
@@ -13,11 +13,11 @@ import { useState } from 'react';
 
 const AgentForm = () => {
   const [form] = Form.useForm();
-  const { data, isPending } = useQuery({
+  const { data: resp, isPending } = useQuery({
     queryKey: [Module.Agent, 'create'],
     queryFn: listAllFunctions
   });
-  const allFunctionsData = data?.items ?? [];
+  const allFunctionsData = (resp?.data as ResourceList<FunctionSpec>).items ?? [];
   const modelOptions = googleAIModels.map(value => ({
     value,
     label: value

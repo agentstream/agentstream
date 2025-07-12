@@ -8,6 +8,7 @@ import { Space, Spin, Typography } from 'antd';
 import DetailCard from '../common/DetailCard';
 import { parseResourceData } from '@/common/utils';
 import ModuleCard from '../common/ModuleCard';
+import { PackageSpec, ResourceData } from '@/common/types';
 
 type Props = {
   name: string;
@@ -15,16 +16,24 @@ type Props = {
 };
 
 const PackageDetail = (props: Props) => {
-  const { data, isPending, isError } = useQuery({
+  const {
+    data: resp,
+    isPending,
+    isError
+  } = useQuery({
     queryKey: [Module.Package, props.namespace, props.name],
     queryFn: () => getPackageDetails(props.namespace, props.name)
   });
+  const data = resp?.data as ResourceData<PackageSpec>;
   return isError || !data ? (
     <EmptyPlaceHolder />
   ) : (
     <Space direction="vertical">
       <DetailCard
-        info={{ ...parseResourceData(data), image: data.spec.functionType.cloud.image }}
+        info={{
+          ...parseResourceData(data),
+          image: data.spec.functionType.cloud.image
+        }}
         loading={isPending}
       />
       <Typography.Title level={3} className="m-0!">

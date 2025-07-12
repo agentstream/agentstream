@@ -50,7 +50,11 @@ const ToolCard = (props: Props) => {
               src={showPlaceHolder ? undefined : props.info.logo || null}
               shape="square"
               size={60}
-              icon={props.icon ?? <QuestionCircleTwoTone className="text-blue-lv6! bg-white! w-full! h-full! flex justify-center"/>}
+              icon={
+                props.icon ?? (
+                  <QuestionCircleTwoTone className="text-blue-lv6! bg-white! w-full! h-full! flex justify-center" />
+                )
+              }
               onError={handleError}
             />
           }

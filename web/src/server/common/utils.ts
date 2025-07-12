@@ -1,4 +1,4 @@
-import { AgentStreamApiResp, KubernetesApiResp, Metadata } from '@/common/types';
+import { AgentStreamApiResp, KubernetesApiResp, Metadata, MutateRespData } from '@/common/types';
 import { deserializeJSON } from '@/common/utils';
 import { StatusCodes } from 'http-status-codes';
 
@@ -16,12 +16,19 @@ export function buildErrorResponse(err: unknown): AgentStreamApiResp {
     };
 }
 
-export function buildSuccessResponse(metadata: Metadata): AgentStreamApiResp {
+export function buildMutateResponse(metadata: Metadata): AgentStreamApiResp<MutateRespData> {
     return {
         code: StatusCodes.OK,
         data: {
             bid: `${metadata.namespace}/${metadata.name}`,
             uid: metadata.uid
         }
+    };
+}
+
+export function buildQueryResponse<T>(data: T): AgentStreamApiResp<T> {
+    return {
+        code: StatusCodes.OK,
+        data
     };
 }

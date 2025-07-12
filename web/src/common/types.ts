@@ -86,9 +86,9 @@ export type SerializedYAML<T> = string & { __brand: 'SerializedYAML'; __original
 
 export type SerializedJSON<T> = string & { __serialized: T };
 
-export type ResourceList<T extends Specs> = {
+export type ResourceList<T extends Specs | unknown> = {
     apiVersion: string;
-    items: ResourceData<T>[];
+    items: (T extends Specs ? ResourceData<T> : unknown)[];
     kind: string;
 };
 
@@ -120,9 +120,14 @@ export type KubernetesApiRespBody = {
     code: number;
 };
 
-export type AgentStreamApiResp = {
+export type AgentStreamApiResp<T = unknown> = {
     code: StatusCodes;
-    data: object;
+    data: T;
+};
+
+export type MutateRespData = {
+    bid: ResourceID;
+    uid: string;
 };
 
 type FunctionConfigs = {
