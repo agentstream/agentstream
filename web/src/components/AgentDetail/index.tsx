@@ -8,6 +8,7 @@ import { redirect, RedirectType } from 'next/navigation';
 import { useState } from 'react';
 import DeleteButton from '../common/DeleteButton';
 import AgentView from './AgentView';
+import UnderDeveloping from '../common/UnderDeveloping';
 
 type Props = {
   name: string;
@@ -46,12 +47,12 @@ const AgentDetail = (props: Props) => {
         {
           key: 'metrics',
           label: 'Metrics',
-          children: 'Token costs'
+          children: <UnderDeveloping />
         },
         {
           key: 'debug',
           label: 'Debug',
-          children: 'Agent Function API'
+          children: <UnderDeveloping />
         }
       ]}
     />

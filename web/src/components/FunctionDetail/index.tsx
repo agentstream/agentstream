@@ -8,6 +8,7 @@ import { deleteFunctionInteraction } from '@/common/logics';
 import { routePathOfOverviewPage } from '@/common/utils';
 import { redirect, RedirectType } from 'next/navigation';
 import { useState } from 'react';
+import UnderDeveloping from '../common/UnderDeveloping';
 
 type Props = {
   name: string;
@@ -46,17 +47,17 @@ const FunctionDetail = (props: Props) => {
         {
           key: 'metrics',
           label: 'Metrics',
-          children: 'Prometheus'
+          children: <UnderDeveloping />
         },
         {
           key: 'messages',
           label: 'Messages',
-          children: 'Pulsar Admin API'
+          children: <UnderDeveloping />
         },
         {
           key: 'logs',
           label: 'Logs',
-          children: 'K8S SDK Pod logs'
+          children: <UnderDeveloping />
         }
       ]}
     />
