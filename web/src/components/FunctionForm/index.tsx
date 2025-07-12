@@ -1,16 +1,15 @@
 'use client';
 
 import { Module } from '@/common/enum';
-import { parseResourceData, routePathOfOverviewPage } from '@/common/utils';
+import { isRequestSuccess, parseResourceData, routePathOfOverviewPage } from '@/common/utils';
 import { createFunction } from '@/server/logics/function';
 import { listAllPackages } from '@/server/logics/package';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Card, Form, Input, Row, Select, Space, Tag } from 'antd';
 import { notification } from '@/common/antd';
-import { StatusCodes } from 'http-status-codes';
 import { useState } from 'react';
 import { redirect, RedirectType, useRouter } from 'next/navigation';
-import { KubernetesApiRespBody } from '@/common/types';
+import { CreateFunctionForm, KubernetesApiRespBody } from '@/common/types';
 import { formLayout, placement } from '@/common/constants';
 import { flattenFunctionConfig } from '@/common/logics';
 import { useUpdateEffect } from 'react-use';
@@ -46,9 +45,9 @@ const FunctionForm = () => {
   const configIsNotEmpty = config.length > 0;
   const [sources, setSources] = useState('');
   const validSources = sources.split(',').filter(source => source !== '');
-  async function handleSubmit(form: Record<string, string>) {
+  async function handleSubmit(form: CreateFunctionForm) {
     const resp = await createFunction(form);
-    if (resp.code === StatusCodes.CREATED) {
+    if (isRequestSuccess(resp)) {
       notification.success({
         message: 'Creation Success!',
         placement

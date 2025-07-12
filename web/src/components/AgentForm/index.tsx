@@ -2,13 +2,12 @@
 
 import { formLayout, placement } from '@/common/constants';
 import { googleAIModels, Module } from '@/common/enum';
-import { KubernetesApiRespBody } from '@/common/types';
-import { parseResourceData, routePathOfOverviewPage } from '@/common/utils';
+import { CreateAgentForm, KubernetesApiRespBody } from '@/common/types';
+import { isRequestSuccess, parseResourceData, routePathOfOverviewPage } from '@/common/utils';
 import { createAgent } from '@/server/logics/agent';
 import { listAllFunctions } from '@/server/logics/function';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Card, Form, Input, notification, Row, Select, Space, Tag } from 'antd';
-import { StatusCodes } from 'http-status-codes';
 import { redirect, RedirectType, useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -34,9 +33,9 @@ const AgentForm = () => {
   const [sources, setSources] = useState('');
   const validSources = sources.split(',').filter(source => source !== '');
   const router = useRouter();
-  async function handleSubmit(form: Record<string, string> & { functions: string[] }) {
+  async function handleSubmit(form: CreateAgentForm) {
     const resp = await createAgent(form);
-    if (resp.code === StatusCodes.CREATED) {
+    if (isRequestSuccess(resp)) {
       notification.success({
         message: 'Creation Success!',
         placement
