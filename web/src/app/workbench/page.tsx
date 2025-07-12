@@ -1,3 +1,5 @@
+import UnderDeveloping from '@/components/common/UnderDeveloping';
+
 export default function Page() {
-  return <div>Dashboard is under developing now...</div>;
+  return <UnderDeveloping />;
 }
