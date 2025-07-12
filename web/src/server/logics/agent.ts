@@ -1,15 +1,24 @@
 'use server';
 
-import { AgentSpec, AgentStreamApiResp, FunctionSpec, KubernetesApiResp, ResourceData, ResourceList } from '@/common/types';
+import {
+    AgentSpec,
+    AgentStreamApiResp,
+    CreateAgentForm,
+    FunctionSpec,
+    ResourceData,
+    ResourceID,
+    ResourceList,
+    Tool
+} from '@/common/types';
 import { client } from '../infra/k8s';
 import { ResourceKind } from '../common/enum';
-import { StatusCodes } from 'http-status-codes';
-import { deserializeJSON } from '@/common/utils';
+import { buildSink, buildSources } from './common';
+import { buildErrorResponse, buildSuccessResponse } from '../common/utils';
 
 const version = 'v1alpha1';
 const group = 'as.agentstream.github.io';
 const plural = 'agents';
-const namespace = 'default'
+const namespace = 'default';
 
 export async function listAllAgents() {
     const resp = await client.listCustomObjectForAllNamespaces({
@@ -31,12 +40,8 @@ export async function getAgentDetails(namespace: string, name: string) {
     return resp as ResourceData<AgentSpec>;
 }
 
-export async function createAgent(form: Record<string, string> & { functions: string[] }): Promise<AgentStreamApiResp> {
+export async function createAgent(form: CreateAgentForm): Promise<AgentStreamApiResp> {
     const { name, description, model, googleApiKey, instruction, functions, sources, sink } = form;
-    const tools = (functions ?? []).map(f => {
-        const [namespace, name] = f.split('/')
-        return { namespace, name }
-    });
     const body = {
         apiVersion: `${group}/${version}`,
         kind: ResourceKind.Agent,
@@ -48,48 +53,26 @@ export async function createAgent(form: Record<string, string> & { functions: st
             description: description ?? '',
             displayName: name,
             instruction,
-            tools,
+            tools: buildTools(functions),
             model: {
                 googleApiKey,
                 model
             },
-            sources: (sources ?? '')
-                .split(',')
-                .filter(item => item !== '')
-                .map(topic => ({
-                    pulsar: {
-                        topic,
-                        subscriptionName: ''
-                    }
-                })),
-            sink: {
-                pulsar: {
-                    topic: sink ?? ''
-                }
-            },
+            sources: buildSources(sources),
+            sink: buildSink(sink)
         }
-    }
+    };
     try {
-        const resp = await client.createNamespacedCustomObject({
+        const resp = (await client.createNamespacedCustomObject({
             group,
             version,
             namespace,
             plural,
             body
-        });
-        return {
-            code: StatusCodes.CREATED,
-            data: {
-                bid: `${namespace}/${name}`,
-                uid: (resp as ResourceData<AgentSpec>).metadata.uid
-            }
-        }
+        })) as ResourceData<AgentSpec>;
+        return buildSuccessResponse(resp.metadata);
     } catch (err) {
-        const { code, body } = err as KubernetesApiResp;
-        return {
-            code,
-            data: deserializeJSON(body)
-        };
+        return buildErrorResponse(err);
     }
 }
 
@@ -102,31 +85,29 @@ export async function deleteAgent(name: string, namespace: string): Promise<Agen
             plural,
             name
         })) as ResourceData<AgentSpec>;
-        return {
-            code: StatusCodes.NO_CONTENT,
-            data: {
-                bid: `${resp.metadata.namespace}/${resp.metadata.name}`,
-                uid: resp.metadata.uid
-            }
-        };
+        return buildSuccessResponse(resp.metadata);
     } catch (err) {
-        const { code, body } = err as KubernetesApiResp;
-        return {
-            code,
-            data: deserializeJSON(body)
-        }
+        return buildErrorResponse(err);
     }
 }
 
-export async function updateAgent(form: Record<string, string> & { functions: string[] }): Promise<AgentStreamApiResp> {
-    const { name, namespace, description, model, googleApiKey, instruction, functions, sources, sink } = form;
-    const tools = (functions ?? []).map(f => {
-        const [namespace, name] = f.split('/')
-        return { namespace, name }
-    });
+export async function updateAgent(
+    form: Record<string, string> & { functions: ResourceID[] }
+): Promise<AgentStreamApiResp> {
     const {
-        metadata: { resourceVersion },
-    } = await getAgentDetails(namespace, name)
+        name,
+        namespace,
+        description,
+        model,
+        googleApiKey,
+        instruction,
+        functions,
+        sources,
+        sink
+    } = form;
+    const {
+        metadata: { resourceVersion }
+    } = await getAgentDetails(namespace, name);
     const body = {
         apiVersion: `${group}/${version}`,
         kind: ResourceKind.Agent,
@@ -139,48 +120,33 @@ export async function updateAgent(form: Record<string, string> & { functions: st
             description: description ?? '',
             displayName: name,
             instruction,
-            tools,
+            tools: buildTools(functions),
             model: {
                 googleApiKey,
                 model
             },
-            sources: (sources ?? '')
-                .split(',')
-                .filter(item => item !== '')
-                .map(topic => ({
-                    pulsar: {
-                        topic,
-                        subscriptionName: ''
-                    }
-                })),
-            sink: {
-                pulsar: {
-                    topic: sink ?? ''
-                }
-            },
+            sources: buildSources(sources),
+            sink: buildSink(sink)
         }
-    }
+    };
     try {
-        const resp = await client.replaceNamespacedCustomObject({
+        const resp = (await client.replaceNamespacedCustomObject({
             name,
             group,
             version,
             namespace,
             plural,
             body
-        })
-        return {
-            code: StatusCodes.OK,
-            data: {
-                bid: `${namespace}/${name}`,
-                uid: (resp as ResourceData<FunctionSpec>).metadata.uid
-            }
-        }
+        })) as ResourceData<FunctionSpec>;
+        return buildSuccessResponse(resp.metadata);
     } catch (err) {
-        const { code, body } = err as KubernetesApiResp
-        return {
-            code,
-            data: deserializeJSON(body)
-        }
+        return buildErrorResponse(err);
     }
+}
+
+function buildTools(tools: ResourceID[]): Tool[] {
+    return (tools ?? []).map(tool => {
+        const [namespace, name] = tool.split('/');
+        return { namespace, name };
+    });
 }

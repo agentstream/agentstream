@@ -2,15 +2,18 @@
 
 import {
     AgentStreamApiResp,
+    CreateFunctionForm,
     FunctionSpec,
-    KubernetesApiResp,
     ResourceData,
-    ResourceList
+    ResourceList,
+    UpdateFunctionForm
 } from '@/common/types';
 import { client } from '../infra/k8s';
 import { ResourceKind } from '../common/enum';
-import { StatusCodes } from 'http-status-codes';
-import { deserializeJSON } from '@/common/utils';
+import { mergeObjects } from '@/common/utils';
+import { configItemPrefix } from '@/common/constants';
+import { buildErrorResponse, buildSuccessResponse } from '../common/utils';
+import { buildSink, buildSources } from './common';
 
 const version = 'v1alpha1';
 const group = 'fs.functionstream.github.io';
@@ -36,15 +39,9 @@ export async function getFunctionDetails(namespace: string, name: string) {
     return resp as ResourceData<FunctionSpec>;
 }
 
-const configItemPrefix = 'config.';
-
-export async function createFunction(form: Record<string, string>): Promise<AgentStreamApiResp> {
+export async function createFunction(form: CreateFunctionForm): Promise<AgentStreamApiResp> {
     const { name, description, package: pak, module, sources, sink } = form;
     const [namespace, packageName] = pak.split('/');
-    const config = Object.entries(form)
-        .filter(([key]) => key.startsWith(configItemPrefix))
-        .map(([key, value]) => ({ [key.slice(configItemPrefix.length)]: value }))
-        .reduce((obj1, obj2) => ({ ...obj1, ...obj2 }), {});
     const body = {
         apiVersion: `${group}/${version}`,
         kind: ResourceKind.Function,
@@ -57,44 +54,22 @@ export async function createFunction(form: Record<string, string>): Promise<Agen
             displayName: name,
             module,
             package: packageName,
-            sources: (sources ?? '')
-                .split(',')
-                .filter(item => item !== '')
-                .map(topic => ({
-                    pulsar: {
-                        topic,
-                        subscriptionName: ''
-                    }
-                })),
-            sink: {
-                pulsar: {
-                    topic: sink ?? ''
-                }
-            },
-            config
+            sources: buildSources(sources),
+            sink: buildSink(sink),
+            config: extractConfigs(form)
         }
     };
     try {
-        const resp = await client.createNamespacedCustomObject({
+        const resp = (await client.createNamespacedCustomObject({
             group,
             version,
             namespace,
             plural,
             body
-        });
-        return {
-            code: StatusCodes.CREATED,
-            data: {
-                bid: `${namespace}/${name}`,
-                uid: (resp as ResourceData<FunctionSpec>).metadata.uid
-            }
-        };
+        })) as ResourceData<FunctionSpec>;
+        return buildSuccessResponse(resp.metadata);
     } catch (err) {
-        const { code, body } = err as KubernetesApiResp;
-        return {
-            code,
-            data: deserializeJSON(body)
-        };
+        return buildErrorResponse(err);
     }
 }
 
@@ -107,34 +82,17 @@ export async function deleteFunction(name: string, namespace: string): Promise<A
             plural,
             name
         })) as ResourceData<FunctionSpec>;
-        return {
-            code: StatusCodes.NO_CONTENT,
-            data: {
-                bid: `${resp.metadata.namespace}/${resp.metadata.name}`,
-                uid: resp.metadata.uid
-            }
-        };
+        return buildSuccessResponse(resp.metadata);
     } catch (err) {
-        const { code, body } = err as KubernetesApiResp;
-        return {
-            code,
-            data: deserializeJSON(body)
-        };
+        return buildErrorResponse(err);
     }
 }
 
-export async function updateFunction(form: Record<string, string>): Promise<AgentStreamApiResp> {
+export async function updateFunction(form: UpdateFunctionForm): Promise<AgentStreamApiResp> {
     const { name, namespace, description, sources, sink } = form;
-    const config = Object.entries(form)
-        .filter(([key]) => key.startsWith(configItemPrefix))
-        .map(([key, value]) => ({ [key.slice(configItemPrefix.length)]: value }))
-        .reduce((obj1, obj2) => ({ ...obj1, ...obj2 }), {});
     const {
         metadata: { resourceVersion },
-        spec: {
-            package: pak,
-            module
-        }
+        spec: { package: pak, module }
     } = await getFunctionDetails(namespace, name);
     const body = {
         apiVersion: `${group}/${version}`,
@@ -149,44 +107,30 @@ export async function updateFunction(form: Record<string, string>): Promise<Agen
             displayName: name,
             module,
             package: pak,
-            sources: (sources ?? '')
-                .split(',')
-                .filter(item => item !== '')
-                .map(topic => ({
-                    pulsar: {
-                        topic,
-                        subscriptionName: ''
-                    }
-                })),
-            sink: {
-                pulsar: {
-                    topic: sink ?? ''
-                }
-            },
-            config
+            sources: buildSources(sources),
+            sink: buildSink(sink),
+            config: extractConfigs(form)
         }
     };
     try {
-        const resp = await client.replaceNamespacedCustomObject({
+        const resp = (await client.replaceNamespacedCustomObject({
             name,
             group,
             version,
             namespace,
             plural,
             body
-        });
-        return {
-            code: StatusCodes.OK,
-            data: {
-                bid: `${namespace}/${name}`,
-                uid: (resp as ResourceData<FunctionSpec>).metadata.uid
-            }
-        };
+        })) as ResourceData<FunctionSpec>;
+        return buildSuccessResponse(resp.metadata);
     } catch (err) {
-        const { code, body } = err as KubernetesApiResp;
-        return {
-            code,
-            data: deserializeJSON(body)
-        };
+        return buildErrorResponse(err);
     }
+}
+
+function extractConfigs(form: CreateFunctionForm | UpdateFunctionForm): Record<string, string> {
+    return mergeObjects(
+        Object.entries(form)
+            .filter(([key]) => key.startsWith(configItemPrefix))
+            .map(([key, value]) => ({ [key.slice(configItemPrefix.length)]: value }))
+    );
 }

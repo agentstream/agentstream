@@ -1,6 +1,7 @@
 import { Module, RoutePath } from './enum';
 import YAML from 'yaml';
 import {
+    AgentStreamApiResp,
     PackageSpec,
     ResourceData,
     ResourceInfo,
@@ -8,6 +9,7 @@ import {
     SerializedYAML,
     Specs
 } from './types';
+import { StatusCodes } from 'http-status-codes';
 
 export function routePathOfOverviewPage(module: Module): string {
     return `${RoutePath.WorkBench}/${module}`;
@@ -48,4 +50,12 @@ export function parseResourceData<T extends Specs>(item: ResourceData<T>): Resou
 
 export function codeBlockInMarkdown(language: string, content: string): string {
     return content ? '```' + language + '\n' + content.trim() + '\n```' : '';
+}
+
+export function mergeObjects<T>(objs: Record<string, T>[]): Record<string, T> {
+    return objs.reduce((obj1, obj2) => ({ ...obj1, ...obj2 }), {});
+}
+
+export function isRequestSuccess(resp: AgentStreamApiResp): boolean {
+    return resp.code === StatusCodes.OK;
 }

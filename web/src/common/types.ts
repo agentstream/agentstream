@@ -1,21 +1,25 @@
+import { StatusCodes } from 'http-status-codes';
+import { configItemPrefix } from './constants';
 import { Module } from './enum';
 
 export type ResourceData<T extends Specs> = {
     apiVersion: string;
     kind: string;
-    metadata: {
-        name: string;
-        namespace: string;
-        uid: string;
-        resourceVersion: string;
-    };
+    metadata: Metadata;
     spec: T;
 };
 
+export type Metadata = {
+    name: string;
+    namespace: string;
+    uid: string;
+    resourceVersion: string;
+};
+
 type BaseSpec = {
-    description: string,
-    displayName: string
-}
+    description: string;
+    displayName: string;
+};
 
 export type PackageSpec = BaseSpec & {
     functionType: {
@@ -43,36 +47,34 @@ export type FunctionSpec = FunctionLikeSpec & {
 };
 
 type FunctionLikeSpec = BaseSpec & {
-    sources: {
-        pulsar: {
-            topic: string;
-            subscriptionName: string;
-        };
-    }[];
-    sink: {
-        pulsar: {
-            topic: string;
-        };
+    sources: MessageChannel[];
+    sink: MessageChannel;
+};
+
+export type MessageChannel = {
+    pulsar: {
+        topic: string;
+        subscriptionName?: string;
     };
-}
+};
 
 export type AgentSpec = FunctionLikeSpec & {
-    instruction: string,
-    model: Model,
-    tools: Tool[]
+    instruction: string;
+    model: Model;
+    tools: Tool[];
 };
 
 type Model = {
-    googleApiKey: string,
-    model: string
-}
+    googleApiKey: string;
+    model: string;
+};
 
-type Tool = {
-    name: string,
-    namespace: string
-}
+export type Tool = {
+    name: string;
+    namespace: string;
+};
 
-export type SpecMap = {
+type SpecMap = {
     [Module.Package]: PackageSpec;
     [Module.Function]: FunctionSpec;
     [Module.Agent]: AgentSpec;
@@ -91,7 +93,7 @@ export type ResourceList<T extends Specs> = {
 };
 
 export type ResourceInfo = {
-    id: string;
+    id: ResourceID;
     name: string;
     description: string;
     logo: string;
@@ -119,6 +121,40 @@ export type KubernetesApiRespBody = {
 };
 
 export type AgentStreamApiResp = {
-    code: number;
+    code: StatusCodes;
     data: object;
 };
+
+type FunctionConfigs = {
+    [index: `${typeof configItemPrefix}.${string}`]: string;
+};
+
+export type CreateFunctionForm = {
+    name: string;
+    package: ResourceID;
+    module: string;
+} & FunctionEditableFields;
+
+type FunctionEditableFields = {
+    description: string;
+    sources: string;
+    sink: string;
+} & FunctionConfigs;
+
+export type UpdateFunctionForm = {
+    name: string;
+    namespace: string;
+} & FunctionEditableFields;
+
+export type CreateAgentForm = {
+    name: string;
+    description: string;
+    model: string;
+    googleApiKey: string;
+    instruction: string;
+    functions: ResourceID[];
+    sources: string;
+    sink: string;
+};
+
+export type ResourceID = `${string}/${string}`;

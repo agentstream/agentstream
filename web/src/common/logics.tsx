@@ -1,13 +1,13 @@
 import { deleteFunction } from '@/server/logics/function';
 import { notification } from 'antd';
-import { StatusCodes } from 'http-status-codes';
 import { KubernetesApiRespBody } from './types';
 import { placement } from './constants';
 import { deleteAgent } from '@/server/logics/agent';
+import { isRequestSuccess } from './utils';
 
 export async function deleteFunctionInteraction(name: string, namespace: string) {
   const resp = await deleteFunction(name, namespace);
-  if (resp.code === StatusCodes.NO_CONTENT) {
+  if (isRequestSuccess(resp)) {
     notification.success({
       message: 'Delete Success!',
       placement
@@ -23,7 +23,7 @@ export async function deleteFunctionInteraction(name: string, namespace: string)
 
 export async function deleteAgentInteraction(name: string, namespace: string) {
   const resp = await deleteAgent(name, namespace);
-  if (resp.code === StatusCodes.NO_CONTENT) {
+  if (isRequestSuccess(resp)) {
     notification.success({
       message: 'Delete Success!',
       placement

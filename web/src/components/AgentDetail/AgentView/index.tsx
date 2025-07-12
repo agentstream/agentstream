@@ -3,13 +3,12 @@
 import { formLayout, placement } from '@/common/constants';
 import { googleAIModels, Module } from '@/common/enum';
 import { KubernetesApiRespBody } from '@/common/types';
-import { parseResourceData } from '@/common/utils';
+import { isRequestSuccess, parseResourceData } from '@/common/utils';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
 import { getAgentDetails, updateAgent } from '@/server/logics/agent';
 import { listAllFunctions } from '@/server/logics/function';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Card, Form, Input, notification, Row, Select, Skeleton, Space, Tag } from 'antd';
-import { StatusCodes } from 'http-status-codes';
 import { useEffect, useState } from 'react';
 
 type Props = {
@@ -56,7 +55,7 @@ const AgentView = (props: Props) => {
       namespace: props.namespace,
       ...form.getFieldsValue()
     });
-    if (resp.code === StatusCodes.OK) {
+    if (isRequestSuccess(resp)) {
       notification.success({
         message: 'Update Success!',
         placement

@@ -6,12 +6,12 @@ import { getFunctionDetails, updateFunction } from '@/server/logics/function';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Form, Input, Row, Skeleton, Space, Tag } from 'antd';
 import { notification } from '@/common/antd';
-import { StatusCodes } from 'http-status-codes';
 import { formLayout, placement } from '@/common/constants';
 import { KubernetesApiRespBody } from '@/common/types';
 import { useEffect, useState } from 'react';
 import { flattenFunctionConfig } from '@/common/logics';
 import { getPackageDetails } from '@/server/logics/package';
+import { isRequestSuccess } from '@/common/utils';
 
 type Props = {
   name: string;
@@ -62,7 +62,7 @@ const FunctionView = (props: Props) => {
       namespace: props.namespace,
       ...form.getFieldsValue()
     });
-    if (resp.code === StatusCodes.OK) {
+    if (isRequestSuccess(resp)) {
       notification.success({
         message: 'Update Success!',
         placement

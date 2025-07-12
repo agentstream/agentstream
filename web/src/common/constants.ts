@@ -17,3 +17,4 @@ export const formLayout = {
         xxl: { span: 20 }
     }
 };
+export const configItemPrefix = 'config';
