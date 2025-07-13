@@ -1,9 +1,9 @@
 'use client';
 
 import { Module } from '@/common/enum';
-import { listAllWithNotice } from '@/common/logics';
+import { listAllWithNotice, parseResourceData } from '@/common/logics';
 import { PackageSpec, ResourceList } from '@/common/types';
-import { noticeUnhandledError, mergeObjects, parseResourceData } from '@/common/utils';
+import { noticeUnhandledError, mergeObjects } from '@/common/utils';
 import { useQuery } from '@tanstack/react-query';
 import { createContext, PropsWithChildren } from 'react';
 

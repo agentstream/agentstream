@@ -1,12 +1,7 @@
 'use client';
 
 import { Module } from '@/common/enum';
-import {
-  noticeUnhandledError,
-  isRequestSuccess,
-  parseResourceData,
-  routePathOfOverviewPage
-} from '@/common/utils';
+import { noticeUnhandledError, isRequestSuccess, routePathOfOverviewPage } from '@/common/utils';
 import { createFunction } from '@/server/logics/function';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Card, Form, Input, Row, Select, Space, Tag } from 'antd';
@@ -15,7 +10,7 @@ import { useState } from 'react';
 import { redirect, RedirectType, useRouter } from 'next/navigation';
 import { CreateFunctionForm, KubernetesApiRespBody } from '@/common/types';
 import { formLayout, placement } from '@/common/constants';
-import { flattenFunctionConfig, listAllWithNotice } from '@/common/logics';
+import { flattenFunctionConfig, listAllWithNotice, parseResourceData } from '@/common/logics';
 import { useUpdateEffect } from 'react-use';
 
 const FunctionForm = () => {

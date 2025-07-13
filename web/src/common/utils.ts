@@ -1,17 +1,9 @@
 import { Module, RoutePath } from './enum';
 import YAML from 'yaml';
-import {
-    AgentStreamApiResp,
-    PackageSpec,
-    ResourceData,
-    ResourceInfo,
-    SerializedJSON,
-    SerializedYAML,
-    Specs
-} from './types';
+import { AgentStreamApiResp, SerializedJSON, SerializedYAML } from './types';
 import { StatusCodes } from 'http-status-codes';
 import { placement } from './constants';
-import { notification } from 'antd';
+import { notification } from '@/common/antd';
 
 export function routePathOfOverviewPage(module: Module): string {
     return `${RoutePath.WorkBench}/${module}`;
@@ -41,15 +33,6 @@ export function deserializeYAML<T>(value: SerializedYAML<T>): T {
     return YAML.parse(value);
 }
 
-export function parseResourceData<T extends Specs>(item: ResourceData<T>): ResourceInfo {
-    return {
-        id: `${item.metadata.namespace}/${item.metadata.name}`,
-        name: item.spec.displayName || item.metadata.name,
-        description: item.spec.description,
-        logo: (item.spec as PackageSpec).logo ?? ''
-    };
-}
-
 export function codeBlockInMarkdown(language: string, content: string): string {
     return content ? '```' + language + '\n' + content.trim() + '\n```' : '';
 }
@@ -74,4 +57,8 @@ export function noticeUnhandledError(isError: boolean, error: Error | null) {
 
 export function capitalize(str: string): string {
     return str.length < 1 ? str : str[0] + str.slice(1);
+}
+
+export function isCreationEnabled(module: Module): boolean {
+    return [Module.Function, Module.Agent].includes(module);
 }

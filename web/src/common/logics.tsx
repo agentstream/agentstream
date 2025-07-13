@@ -1,11 +1,14 @@
 import { deleteFunction, getFunctionDetails, listAllFunctions } from '@/server/logics/function';
-import { notification } from 'antd';
+import { notification } from '@/common/antd';
 import {
   AgentStreamApiResp,
   KubernetesApiRespBody,
+  PackageSpec,
   ResourceData,
+  ResourceInfo,
   ResourceList,
-  SpecMap
+  SpecMap,
+  Specs
 } from './types';
 import { placement } from './constants';
 import { deleteAgent, getAgentDetails, listAllAgents } from '@/server/logics/agent';
@@ -91,4 +94,13 @@ export async function getDetailsWithNotice<T extends Module, U = SpecMap[T]>(
     });
   }
   return resp as AgentStreamApiResp<ResourceData<U>>;
+}
+
+export function parseResourceData<T extends Specs>(item: ResourceData<T>): ResourceInfo {
+  return {
+    id: `${item.metadata.namespace}/${item.metadata.name}`,
+    name: item.spec.displayName || item.metadata.name,
+    description: item.spec.description,
+    logo: (item.spec as PackageSpec).logo ?? ''
+  };
 }

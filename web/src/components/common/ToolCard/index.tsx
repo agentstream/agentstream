@@ -3,7 +3,7 @@
 import { Module } from '@/common/enum';
 import { ResourceInfo } from '@/common/types';
 import { routePathOfDetailPage } from '@/common/utils';
-import Icon, { DeleteOutlined, QuestionCircleTwoTone } from '@ant-design/icons';
+import Icon, { DeleteOutlined, QuestionCircleTwoTone, RobotOutlined } from '@ant-design/icons';
 import { Avatar, Card, Space, Typography } from 'antd';
 import { useRouter } from 'next/navigation';
 import { ReactNode, useState } from 'react';
@@ -51,9 +51,12 @@ const ToolCard = (props: Props) => {
               shape="square"
               size={60}
               icon={
-                props.icon ?? (
+                props.icon ??
+                (props.type === Module.Agent ? (
+                  <RobotOutlined className="text-blue-lv6! bg-white! w-full! h-full! flex justify-center" />
+                ) : (
                   <QuestionCircleTwoTone className="text-blue-lv6! bg-white! w-full! h-full! flex justify-center" />
-                )
+                ))
               }
               onError={handleError}
             />
