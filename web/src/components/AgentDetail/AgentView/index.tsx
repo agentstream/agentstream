@@ -144,16 +144,18 @@ const AgentView = (props: Props) => {
             onChange={event => setSources(event.target.value.split(','))}
           />
         ) : (
-          data.spec.sources.map(item => {
-            const {
-              pulsar: { topic }
-            } = item;
-            return (
-              <Tag color="blue" key={topic}>
-                {topic}
-              </Tag>
-            );
-          })
+          <Space>
+            {data.spec.sources.map(item => {
+              const {
+                pulsar: { topic }
+              } = item;
+              return (
+                <Tag color="blue" key={topic}>
+                  {topic}
+                </Tag>
+              );
+            })}
+          </Space>
         )}
       </Form.Item>
       {props.inEditing && validSources.length > 0 ? (
