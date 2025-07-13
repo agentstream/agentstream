@@ -2,13 +2,11 @@
 
 import { formLayout } from '@/common/constants';
 import { googleAIModels, Module } from '@/common/enum';
-import { createWithNotice } from '@/common/interactions';
 import { parseResourceData } from '@/common/logics';
-import { CreateAgentForm } from '@/common/types';
 import { noticeUnhandledError, routePathOfOverviewPage } from '@/common/utils';
-import { useResourceList } from '@/hooks';
+import { useCreateResource, useResourceList } from '@/hooks';
 import { Button, Card, Form, Input, Row, Select, Space, Tag } from 'antd';
-import { redirect, RedirectType, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 const AgentForm = () => {
@@ -30,13 +28,11 @@ const AgentForm = () => {
   const [sources, setSources] = useState('');
   const validSources = sources.split(',').filter(source => source !== '');
   const router = useRouter();
-  async function handleSubmit(form: CreateAgentForm) {
-    if (await createWithNotice(Module.Agent, form)) {
-      redirect(routePathOfOverviewPage(Module.Agent), RedirectType.push);
-    }
-  }
+  const { mutate } = useCreateResource(Module.Agent, () =>
+    router.replace(routePathOfOverviewPage(Module.Agent))
+  );
   return (
-    <Form form={form} name={Module.Agent} {...formLayout} onFinish={handleSubmit}>
+    <Form form={form} name={Module.Agent} {...formLayout} onFinish={mutate}>
       <Form.Item
         label="Name"
         name="name"

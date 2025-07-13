@@ -1,6 +1,6 @@
 import { Module, RoutePath } from './enum';
 import YAML from 'yaml';
-import { AgentStreamApiResp, SerializedJSON, SerializedYAML } from './types';
+import { AgentStreamApiResp, ChangableModule, SerializedJSON, SerializedYAML } from './types';
 import { StatusCodes } from 'http-status-codes';
 import { placement } from './constants';
 import { notification } from '@/common/antd';
@@ -56,9 +56,9 @@ export function noticeUnhandledError(isError: boolean, error: Error | null) {
 }
 
 export function capitalize(str: string): string {
-    return str.length < 1 ? str : str[0] + str.slice(1);
+    return str.length < 1 ? str : str[0].toUpperCase() + str.slice(1);
 }
 
-export function isCreationEnabled(module: Module): module is Module.Function | Module.Agent {
+export function canChange(module: Module): module is ChangableModule {
     return [Module.Function, Module.Agent].includes(module);
 }

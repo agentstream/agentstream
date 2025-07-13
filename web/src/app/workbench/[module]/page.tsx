@@ -3,7 +3,7 @@
 import { Module } from '@/common/enum';
 import { parseResourceData } from '@/common/logics';
 import { FunctionSpec, PackageSpec, ResourceData } from '@/common/types';
-import { isCreationEnabled, noticeUnhandledError } from '@/common/utils';
+import { canChange, noticeUnhandledError } from '@/common/utils';
 import CreateCard from '@/components/common/CreateCard';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
 import LoadingPlaceHolder from '@/components/common/LoadingPlaceHolder';
@@ -29,7 +29,7 @@ export default function Page({ params }: { params: Promise<{ module: Module }> }
             return <ToolCard info={info} type={module} refresh={refetch} key={info.id} />;
           })
         : null}
-      {isCreationEnabled(module) ? <CreateCard type={module} /> : null}
+      {canChange(module) ? <CreateCard type={module} /> : null}
     </div>
   );
   return (

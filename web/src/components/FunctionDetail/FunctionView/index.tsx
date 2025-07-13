@@ -7,8 +7,7 @@ import { formLayout } from '@/common/constants';
 import { useEffect, useState } from 'react';
 import { flattenFunctionConfig } from '@/common/logics';
 import { noticeUnhandledError } from '@/common/utils';
-import { updateWithNotice } from '@/common/interactions';
-import { useResourceDetails } from '@/hooks';
+import { useResourceDetails, useUpdateResource } from '@/hooks';
 
 type Props = {
   name: string;
@@ -47,21 +46,21 @@ const FunctionView = (props: Props) => {
     form.resetFields();
     props.setInEditing(false);
   }
+  const { mutate } = useUpdateResource(Module.Function, () => {
+    refetch();
+    props.setInEditing(false);
+  });
   async function handleClick() {
     if (!props.inEditing) {
       props.setInEditing(true);
       return;
     }
-    if (
-      await updateWithNotice(Module.Function, {
-        name,
-        namespace: props.namespace,
-        ...form.getFieldsValue()
-      })
-    ) {
-      refetch();
-      props.setInEditing(false);
-    }
+    const { name, namespace } = props;
+    mutate({
+      name,
+      namespace,
+      ...form.getFieldsValue()
+    });
   }
   return isError || !data ? (
     <EmptyPlaceHolder />

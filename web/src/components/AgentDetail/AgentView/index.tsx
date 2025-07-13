@@ -2,11 +2,10 @@
 
 import { formLayout } from '@/common/constants';
 import { googleAIModels, Module } from '@/common/enum';
-import { updateWithNotice } from '@/common/interactions';
 import { parseResourceData } from '@/common/logics';
 import { noticeUnhandledError } from '@/common/utils';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
-import { useResourceDetails, useResourceList } from '@/hooks';
+import { useResourceDetails, useResourceList, useUpdateResource } from '@/hooks';
 import { Button, Card, Form, Input, Row, Select, Skeleton, Space, Tag } from 'antd';
 import { useEffect, useState } from 'react';
 
@@ -49,21 +48,21 @@ const AgentView = (props: Props) => {
     form.resetFields();
     props.setInEditing(false);
   }
+  const { mutate } = useUpdateResource(Module.Agent, () => {
+    refetch();
+    props.setInEditing(false);
+  });
   async function handleClick() {
     if (!props.inEditing) {
       props.setInEditing(true);
       return;
     }
-    if (
-      await updateWithNotice(Module.Agent, {
-        name,
-        namespace: props.namespace,
-        ...form.getFieldsValue()
-      })
-    ) {
-      refetch();
-      props.setInEditing(false);
-    }
+    const { name, namespace } = props;
+    mutate({
+      name,
+      namespace,
+      ...form.getFieldsValue()
+    });
   }
   const name = (data?.spec.displayName || data?.metadata.name) ?? '';
   const modelOptions = googleAIModels.map(value => ({
