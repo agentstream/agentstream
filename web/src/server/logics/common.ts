@@ -1,4 +1,5 @@
 import { MessageChannel } from '@/common/types';
+import 'server-only';
 
 export function buildSources(sources: string): MessageChannel[] {
     return (sources ?? '')

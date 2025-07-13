@@ -1,6 +1,7 @@
 import { AgentStreamApiResp, KubernetesApiResp, Metadata, MutateRespData } from '@/common/types';
 import { deserializeJSON } from '@/common/utils';
 import { StatusCodes } from 'http-status-codes';
+import 'server-only';
 
 export function buildErrorResponse(err: unknown): AgentStreamApiResp {
     const { code, body } = err as KubernetesApiResp;

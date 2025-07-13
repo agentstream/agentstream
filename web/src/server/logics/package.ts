@@ -3,17 +3,12 @@
 import { PackageSpec, ResourceData, ResourceList } from '@/common/types';
 import { client } from '../infra/k8s';
 import { buildErrorResponse, buildQueryResponse } from '../common/utils';
-
-const version = 'v1alpha1';
-const group = 'fs.functionstream.github.io';
-const plural = 'packages';
+import { PackageConfig } from '../common/config';
 
 export async function listAllPackages() {
     try {
         const resp = (await client.listCustomObjectForAllNamespaces({
-            group,
-            version,
-            plural
+            ...PackageConfig
         })) as ResourceList<PackageSpec>;
         return buildQueryResponse(resp);
     } catch (err) {
@@ -24,10 +19,8 @@ export async function listAllPackages() {
 export async function getPackageDetails(namespace: string, name: string) {
     try {
         const resp = (await client.getNamespacedCustomObject({
-            group,
-            version,
+            ...PackageConfig,
             namespace,
-            plural,
             name
         })) as ResourceData<PackageSpec>;
         return buildQueryResponse(resp);
