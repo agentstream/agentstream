@@ -2,12 +2,11 @@
 
 import { formLayout, placement } from '@/common/constants';
 import { googleAIModels, Module } from '@/common/enum';
-import { listAllWithNotice } from '@/common/logics';
+import { listAllWithNotice, parseResourceData } from '@/common/logics';
 import { CreateAgentForm, FunctionSpec, KubernetesApiRespBody, ResourceList } from '@/common/types';
 import {
   noticeUnhandledError,
   isRequestSuccess,
-  parseResourceData,
   routePathOfOverviewPage
 } from '@/common/utils';
 import { createAgent } from '@/server/logics/agent';

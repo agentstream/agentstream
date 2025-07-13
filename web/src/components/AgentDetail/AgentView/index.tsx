@@ -2,7 +2,7 @@
 
 import { formLayout, placement } from '@/common/constants';
 import { googleAIModels, Module } from '@/common/enum';
-import { getDetailsWithNotice, listAllWithNotice } from '@/common/logics';
+import { getDetailsWithNotice, listAllWithNotice, parseResourceData } from '@/common/logics';
 import {
   AgentSpec,
   FunctionSpec,
@@ -10,7 +10,7 @@ import {
   ResourceData,
   ResourceList
 } from '@/common/types';
-import { noticeUnhandledError, isRequestSuccess, parseResourceData } from '@/common/utils';
+import { noticeUnhandledError, isRequestSuccess } from '@/common/utils';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
 import { updateAgent } from '@/server/logics/agent';
 import { useQuery } from '@tanstack/react-query';
