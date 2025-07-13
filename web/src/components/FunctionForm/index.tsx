@@ -25,7 +25,7 @@ const FunctionForm = () => {
     queryKey: [Module.Function, 'create'],
     queryFn: listAllPackages
   });
-  const allPackagesData = (resp?.data as ResourceList<PackageSpec>).items ?? [];
+  const allPackagesData = (resp?.data as ResourceList<PackageSpec>)?.items ?? [];
   const packageOptions = allPackagesData.map(item => {
     const { id, name } = parseResourceData(item);
     return {
