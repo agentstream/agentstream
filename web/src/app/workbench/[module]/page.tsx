@@ -1,38 +1,28 @@
 'use client';
 
 import { Module } from '@/common/enum';
-import { FunctionSpec, PackageSpec, ResourceData, ResourceList } from '@/common/types';
-import { isRequestSuccess, parseResourceData } from '@/common/utils';
+import { listAllWithNotice } from '@/common/logics';
+import { FunctionSpec, PackageSpec, ResourceData } from '@/common/types';
+import { noticeUnhandledError, parseResourceData } from '@/common/utils';
 import CreateCard from '@/components/common/CreateCard';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
 import LoadingPlaceHolder from '@/components/common/LoadingPlaceHolder';
 import ToolCard from '@/components/common/ToolCard';
 import { LogoContext, LogoContextProvider } from '@/contexts/LogoContext';
-import { listAllAgents } from '@/server/logics/agent';
-import { listAllFunctions } from '@/server/logics/function';
-import { listAllPackages } from '@/server/logics/package';
 import { RobotOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { use, useContext } from 'react';
 
-const fetchAction = {
-  [Module.Package]: listAllPackages,
-  [Module.Function]: listAllFunctions,
-  [Module.Agent]: listAllAgents
-};
-
 export default function Page({ params }: { params: Promise<{ module: Module }> }) {
   const { module } = use(params);
-  const { data, isPending, isError, refetch } = useQuery({
+  const { data, isPending, isError, error, refetch } = useQuery({
     queryKey: [module],
     queryFn: async () => {
-      const resp = await fetchAction[module]();
-      if (!isRequestSuccess(resp)) {
-        throw resp.data;
-      }
-      return (resp.data as ResourceList<unknown>).items ?? [];
+      const resp = await listAllWithNotice(module);
+      return resp.data?.items ?? [];
     }
   });
+  noticeUnhandledError(isError, error);
   const logos = useContext(LogoContext);
   const enableCreate = [Module.Function, Module.Agent].includes(module);
   const list = data ?? [];

@@ -2,6 +2,7 @@
 
 import { formLayout, placement } from '@/common/constants';
 import { googleAIModels, Module } from '@/common/enum';
+import { getDetailsWithNotice, listAllWithNotice } from '@/common/logics';
 import {
   AgentSpec,
   FunctionSpec,
@@ -9,10 +10,9 @@ import {
   ResourceData,
   ResourceList
 } from '@/common/types';
-import { isRequestSuccess, parseResourceData } from '@/common/utils';
+import { noticeUnhandledError, isRequestSuccess, parseResourceData } from '@/common/utils';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
-import { getAgentDetails, updateAgent } from '@/server/logics/agent';
-import { listAllFunctions } from '@/server/logics/function';
+import { updateAgent } from '@/server/logics/agent';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Card, Form, Input, notification, Row, Select, Skeleton, Space, Tag } from 'antd';
 import { useEffect, useState } from 'react';
@@ -30,16 +30,24 @@ const AgentView = (props: Props) => {
     data: resp,
     isPending,
     isError,
+    error,
     refetch
   } = useQuery({
     queryKey: [Module.Agent, props.namespace, props.name],
-    queryFn: () => getAgentDetails(props.namespace, props.name)
+    queryFn: () => getDetailsWithNotice(Module.Agent, props.namespace, props.name)
   });
+  noticeUnhandledError(isError, error);
   const data = resp?.data as ResourceData<AgentSpec>;
-  const { data: funcResp, isPending: funcIsPending } = useQuery({
+  const {
+    data: funcResp,
+    isPending: funcIsPending,
+    isError: funcIsError,
+    error: funcError
+  } = useQuery({
     queryKey: [Module.Agent, 'config'],
-    queryFn: listAllFunctions
+    queryFn: () => listAllWithNotice(Module.Function)
   });
+  noticeUnhandledError(funcIsError, funcError);
   const funcData = funcResp?.data as ResourceList<FunctionSpec>;
   const allFunctionsData = funcData?.items ?? [];
   const funcNames = allFunctionsData
