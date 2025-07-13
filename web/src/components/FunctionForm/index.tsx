@@ -2,13 +2,17 @@
 
 import { Module } from '@/common/enum';
 import { noticeUnhandledError, routePathOfOverviewPage } from '@/common/utils';
-import { Button, Card, Form, Input, Row, Select, Space, Tag } from 'antd';
+import { Card, Form, Input } from 'antd';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { formLayout } from '@/common/constants';
+import { configItemPrefix, formLayout } from '@/common/constants';
 import { flattenFunctionConfig, parseResourceData } from '@/common/logics';
 import { useUpdateEffect } from 'react-use';
 import { useCreateResource, useResourceList } from '@/hooks';
+import FormTextField from '../common/FormTextField';
+import FormArrayField from '../common/FormArrayField';
+import FormOptionField from '../common/FormOptionField';
+import FormSubmitButton from '../common/FormSubmitButton';
 
 const FunctionForm = () => {
   const [form] = Form.useForm();
@@ -22,7 +26,7 @@ const FunctionForm = () => {
       label: name
     };
   });
-  const [selectedPackage, selectPackage] = useState('');
+  const [selectedPackage, setPackage] = useState('');
   const selectedPackages = allPackagesData.filter(
     item => parseResourceData(item).id === selectedPackage
   );
@@ -37,8 +41,6 @@ const FunctionForm = () => {
   }, [form, selectedPackage]);
   const config = Object.entries(selectedPackages[0]?.spec.modules[selectedModule]?.config ?? {});
   const configIsNotEmpty = config.length > 0;
-  const [sources, setSources] = useState('');
-  const validSources = sources.split(',').filter(source => source !== '');
   const router = useRouter();
   const { mutate } = useCreateResource(Module.Function, () =>
     router.replace(routePathOfOverviewPage(Module.Function))
@@ -51,83 +53,42 @@ const FunctionForm = () => {
       onFinish={mutate}
       initialValues={flattenFunctionConfig(config)}
     >
-      <Form.Item
-        label="Name"
-        name="name"
-        rules={[{ required: true, message: `Please input a ${Module.Function} name!` }]}
-      >
-        <Input />
-      </Form.Item>
-      <Form.Item label="Description" name="description">
-        <Input.TextArea rows={3} />
-      </Form.Item>
-      <Form.Item
-        label="Package"
+      <FormTextField name="name" warning={`Please input a ${Module.Function} name!`} />
+      <FormTextField name="description" rows={3} />
+      <FormOptionField
         name="package"
-        rules={[{ required: true, message: 'Please choose a package!' }]}
-      >
-        <Select
-          options={packageOptions}
-          loading={isPending}
-          value={selectedPackage}
-          onChange={selectPackage}
-        />
-      </Form.Item>
-      <Form.Item
-        label="Module"
+        warning="Please choose a package!"
+        options={packageOptions}
+        onChange={setPackage}
+      />
+      <FormOptionField
         name="module"
-        rules={[{ required: true, message: 'Please choose a module!' }]}
-      >
-        <Select
-          options={moduleOptions}
-          loading={isPending}
-          value={selectedModule}
-          onChange={selectModule}
-          disabled={!selectedPackage}
-        />
-      </Form.Item>
-      <Form.Item label="Sources" name="sources">
-        <Input
-          placeholder="Please input topic names split by comma."
-          value={sources}
-          onChange={event => setSources(event.target.value)}
-        />
-      </Form.Item>
-      {validSources.length > 0 ? (
-        <Form.Item label=" " colon={false}>
-          {validSources.map(source => (
-            <Tag key={source} color="blue">
-              {source}
-            </Tag>
-          ))}
-        </Form.Item>
-      ) : null}
-      <Form.Item label="Sink" name="sink">
-        <Input placeholder="Please input a topic name." />
-      </Form.Item>
+        warning="Please choose a module!"
+        options={moduleOptions}
+        loading={isPending}
+        value={selectedModule}
+        onChange={selectModule}
+        disabled={!selectedPackage}
+      />
+      <FormArrayField
+        name="sources"
+        placeholder="Please input topic names split by comma."
+        split=","
+        ignore=""
+      />
+      <FormTextField name="sink" placeholder="Please input a topic name." />
       <Form.Item label="Configs" colon={false}>
         {configIsNotEmpty ? (
           <Card>
             {config.map(([key]) => (
-              <Form.Item label={key} key={key} name={`config.${key}`}>
-                <Input />
-              </Form.Item>
+              <FormTextField name={`${configItemPrefix}.${key}`} label={key} key={key} />
             ))}
           </Card>
         ) : (
           <Input value="None" disabled={true} />
         )}
       </Form.Item>
-      <Form.Item label={null}>
-        <Row justify="end">
-          <Space>
-            <Button onClick={router.back}>Cancel</Button>
-            <Button type="primary" htmlType="submit">
-              Submit
-            </Button>
-          </Space>
-        </Row>
-      </Form.Item>
+      <FormSubmitButton />
     </Form>
   );
 };

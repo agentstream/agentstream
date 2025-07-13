@@ -1,8 +1,9 @@
+import { configItemPrefix } from './constants';
 import { PackageSpec, ResourceData, ResourceInfo, Specs } from './types';
 
 export function flattenFunctionConfig(config: [string, string][]): Record<string, string> {
   return config
-    .map(([key, value]) => ({ [`config.${key}`]: value }))
+    .map(([key, value]) => ({ [`${configItemPrefix}.${key}`]: value }))
     .reduce((obj1, obj2) => ({ ...obj1, ...obj2 }), {});
 }
 
