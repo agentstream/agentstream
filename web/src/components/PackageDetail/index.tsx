@@ -8,7 +8,8 @@ import DetailCard from '../common/DetailCard';
 import { noticeUnhandledError } from '@/common/utils';
 import ModuleCard from '../common/ModuleCard';
 import { PackageSpec, ResourceData } from '@/common/types';
-import { getDetailsWithNotice, parseResourceData } from '@/common/logics';
+import { parseResourceData } from '@/common/logics';
+import { getDetailsWithNotice } from '@/common/interactions';
 
 type Props = {
   name: string;

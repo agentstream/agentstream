@@ -1,20 +1,14 @@
 'use client';
 
-import { formLayout, placement } from '@/common/constants';
+import { formLayout } from '@/common/constants';
 import { googleAIModels, Module } from '@/common/enum';
-import { getDetailsWithNotice, listAllWithNotice, parseResourceData } from '@/common/logics';
-import {
-  AgentSpec,
-  FunctionSpec,
-  KubernetesApiRespBody,
-  ResourceData,
-  ResourceList
-} from '@/common/types';
-import { noticeUnhandledError, isRequestSuccess } from '@/common/utils';
+import { getDetailsWithNotice, listAllWithNotice, updateWithNotice } from '@/common/interactions';
+import { parseResourceData } from '@/common/logics';
+import { AgentSpec, FunctionSpec, ResourceData, ResourceList } from '@/common/types';
+import { noticeUnhandledError } from '@/common/utils';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
-import { updateAgent } from '@/server/logics/agent';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Card, Form, Input, notification, Row, Select, Skeleton, Space, Tag } from 'antd';
+import { Button, Card, Form, Input, Row, Select, Skeleton, Space, Tag } from 'antd';
 import { useEffect, useState } from 'react';
 
 type Props = {
@@ -71,24 +65,15 @@ const AgentView = (props: Props) => {
       props.setInEditing(true);
       return;
     }
-    const resp = await updateAgent({
-      name,
-      namespace: props.namespace,
-      ...form.getFieldsValue()
-    });
-    if (isRequestSuccess(resp)) {
-      notification.success({
-        message: 'Update Success!',
-        placement
-      });
+    if (
+      await updateWithNotice(Module.Agent, {
+        name,
+        namespace: props.namespace,
+        ...form.getFieldsValue()
+      })
+    ) {
       refetch();
       props.setInEditing(false);
-    } else {
-      notification.error({
-        message: 'Update failed!',
-        description: (resp.data as KubernetesApiRespBody).message,
-        placement
-      });
     }
   }
   const name = (data?.spec.displayName || data?.metadata.name) ?? '';

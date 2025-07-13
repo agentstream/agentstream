@@ -1,7 +1,8 @@
 'use client';
 
 import { Module } from '@/common/enum';
-import { listAllWithNotice, parseResourceData } from '@/common/logics';
+import { listAllWithNotice } from '@/common/interactions';
+import { parseResourceData } from '@/common/logics';
 import { FunctionSpec, PackageSpec, ResourceData } from '@/common/types';
 import { isCreationEnabled, noticeUnhandledError } from '@/common/utils';
 import CreateCard from '@/components/common/CreateCard';
@@ -18,7 +19,7 @@ export default function Page({ params }: { params: Promise<{ module: Module }> }
     queryKey: [module],
     queryFn: async () => {
       const resp = await listAllWithNotice(module);
-      return resp.data?.items ?? [];
+      return resp?.data?.items ?? [];
     }
   });
   noticeUnhandledError(isError, error);

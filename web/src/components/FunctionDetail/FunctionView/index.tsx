@@ -2,15 +2,14 @@
 
 import { Module } from '@/common/enum';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
-import { updateFunction } from '@/server/logics/function';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Form, Input, Row, Skeleton, Space, Tag } from 'antd';
-import { notification } from '@/common/antd';
-import { formLayout, placement } from '@/common/constants';
-import { FunctionSpec, KubernetesApiRespBody, PackageSpec, ResourceData } from '@/common/types';
+import { formLayout } from '@/common/constants';
+import { FunctionSpec, PackageSpec, ResourceData } from '@/common/types';
 import { useEffect, useState } from 'react';
-import { flattenFunctionConfig, getDetailsWithNotice } from '@/common/logics';
-import { isRequestSuccess, noticeUnhandledError } from '@/common/utils';
+import { flattenFunctionConfig } from '@/common/logics';
+import { noticeUnhandledError } from '@/common/utils';
+import { getDetailsWithNotice, updateWithNotice } from '@/common/interactions';
 
 type Props = {
   name: string;
@@ -67,24 +66,15 @@ const FunctionView = (props: Props) => {
       props.setInEditing(true);
       return;
     }
-    const resp = await updateFunction({
-      name,
-      namespace: props.namespace,
-      ...form.getFieldsValue()
-    });
-    if (isRequestSuccess(resp)) {
-      notification.success({
-        message: 'Update Success!',
-        placement
-      });
+    if (
+      await updateWithNotice(Module.Function, {
+        name,
+        namespace: props.namespace,
+        ...form.getFieldsValue()
+      })
+    ) {
       refetch();
       props.setInEditing(false);
-    } else {
-      notification.error({
-        message: 'Update failed!',
-        description: (resp.data as KubernetesApiRespBody).message,
-        placement
-      });
     }
   }
   return isError || !data ? (

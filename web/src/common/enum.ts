@@ -35,4 +35,4 @@ export const googleAIModels = [
     'veo-2.0-generate-001',
     'gemini-live-2.5-flash-preview',
     'gemini-2.0-flash-live-001'
-]
+];

@@ -162,4 +162,8 @@ export type CreateAgentForm = {
     sink: string;
 };
 
+export type UpdateAgentForm = {
+    namespace: string;
+} & CreateAgentForm;
+
 export type ResourceID = `${string}/${string}`;

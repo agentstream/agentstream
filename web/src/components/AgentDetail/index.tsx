@@ -1,7 +1,6 @@
 'use client';
 
 import { Module } from '@/common/enum';
-import { deleteAgentInteraction } from '@/common/logics';
 import { routePathOfOverviewPage } from '@/common/utils';
 import { Button, Tabs } from 'antd';
 import { redirect, RedirectType } from 'next/navigation';
@@ -9,6 +8,7 @@ import { useState } from 'react';
 import DeleteButton from '../common/DeleteButton';
 import AgentView from './AgentView';
 import UnderDeveloping from '../common/UnderDeveloping';
+import { deleteWithNotice } from '@/common/interactions';
 
 type Props = {
   name: string;
@@ -18,7 +18,7 @@ type Props = {
 const AgentDetail = (props: Props) => {
   const [inEditing, setInEditing] = useState(false);
   async function handleDelete() {
-    await deleteAgentInteraction(props.name, props.namespace);
+    await deleteWithNotice(Module.Agent, props.name, props.namespace);
     redirect(routePathOfOverviewPage(Module.Agent), RedirectType.replace);
   }
   return (

@@ -7,7 +7,8 @@ import {
     ResourceData,
     ResourceID,
     ResourceList,
-    Tool
+    Tool,
+    UpdateAgentForm
 } from '@/common/types';
 import { client } from '../infra/k8s';
 import { ResourceKind } from '../common/enum';
@@ -98,9 +99,7 @@ export async function deleteAgent(name: string, namespace: string): Promise<Agen
     }
 }
 
-export async function updateAgent(
-    form: Record<string, string> & { functions: ResourceID[] }
-): Promise<AgentStreamApiResp> {
+export async function updateAgent(form: UpdateAgentForm): Promise<AgentStreamApiResp> {
     const {
         name,
         namespace,
