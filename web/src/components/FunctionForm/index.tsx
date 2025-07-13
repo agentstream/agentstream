@@ -1,31 +1,36 @@
 'use client';
 
 import { Module } from '@/common/enum';
-import { isRequestSuccess, parseResourceData, routePathOfOverviewPage } from '@/common/utils';
+import {
+  noticeUnhandledError,
+  isRequestSuccess,
+  parseResourceData,
+  routePathOfOverviewPage
+} from '@/common/utils';
 import { createFunction } from '@/server/logics/function';
-import { listAllPackages } from '@/server/logics/package';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Card, Form, Input, Row, Select, Space, Tag } from 'antd';
 import { notification } from '@/common/antd';
 import { useState } from 'react';
 import { redirect, RedirectType, useRouter } from 'next/navigation';
-import {
-  CreateFunctionForm,
-  KubernetesApiRespBody,
-  PackageSpec,
-  ResourceList
-} from '@/common/types';
+import { CreateFunctionForm, KubernetesApiRespBody } from '@/common/types';
 import { formLayout, placement } from '@/common/constants';
-import { flattenFunctionConfig } from '@/common/logics';
+import { flattenFunctionConfig, listAllWithNotice } from '@/common/logics';
 import { useUpdateEffect } from 'react-use';
 
 const FunctionForm = () => {
   const [form] = Form.useForm();
-  const { data: resp, isPending } = useQuery({
+  const {
+    data: resp,
+    isPending,
+    isError,
+    error
+  } = useQuery({
     queryKey: [Module.Function, 'create'],
-    queryFn: listAllPackages
+    queryFn: () => listAllWithNotice(Module.Package)
   });
-  const allPackagesData = (resp?.data as ResourceList<PackageSpec>)?.items ?? [];
+  noticeUnhandledError(isError, error);
+  const allPackagesData = resp?.data.items ?? [];
   const packageOptions = allPackagesData.map(item => {
     const { id, name } = parseResourceData(item);
     return {

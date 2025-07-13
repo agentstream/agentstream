@@ -2,16 +2,15 @@
 
 import { Module } from '@/common/enum';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
-import { getFunctionDetails, updateFunction } from '@/server/logics/function';
+import { updateFunction } from '@/server/logics/function';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Form, Input, Row, Skeleton, Space, Tag } from 'antd';
 import { notification } from '@/common/antd';
 import { formLayout, placement } from '@/common/constants';
 import { FunctionSpec, KubernetesApiRespBody, PackageSpec, ResourceData } from '@/common/types';
 import { useEffect, useState } from 'react';
-import { flattenFunctionConfig } from '@/common/logics';
-import { getPackageDetails } from '@/server/logics/package';
-import { isRequestSuccess } from '@/common/utils';
+import { flattenFunctionConfig, getDetailsWithNotice } from '@/common/logics';
+import { isRequestSuccess, noticeUnhandledError } from '@/common/utils';
 
 type Props = {
   name: string;
@@ -26,11 +25,13 @@ const FunctionView = (props: Props) => {
     data: resp,
     isPending,
     isError,
+    error,
     refetch
   } = useQuery({
     queryKey: [Module.Function, props.namespace, props.name],
-    queryFn: () => getFunctionDetails(props.namespace, props.name)
+    queryFn: () => getDetailsWithNotice(Module.Function, props.namespace, props.name)
   });
+  noticeUnhandledError(isError, error);
   const data = resp?.data as ResourceData<FunctionSpec>;
   const config = Object.entries(data?.spec.config ?? {});
   const configIsNotEmpty = config.length > 0;
@@ -42,7 +43,9 @@ const FunctionView = (props: Props) => {
   } = useQuery({
     queryKey: [Module.Function, props.namespace, data?.spec.package],
     queryFn: () =>
-      data?.spec.package ? getPackageDetails(props.namespace, data.spec.package) : null
+      data?.spec.package
+        ? getDetailsWithNotice(Module.Package, props.namespace, data.spec.package)
+        : null
   });
   const pakData = pakResp?.data as ResourceData<PackageSpec>;
   const packageName = pakData?.spec.displayName || pakData?.metadata.name;

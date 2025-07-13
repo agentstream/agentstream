@@ -1,14 +1,14 @@
 'use client';
 
 import { Module } from '@/common/enum';
-import { getPackageDetails } from '@/server/logics/package';
 import { useQuery } from '@tanstack/react-query';
 import EmptyPlaceHolder from '../common/EmptyPlaceHolder';
 import { Space, Spin, Typography } from 'antd';
 import DetailCard from '../common/DetailCard';
-import { parseResourceData } from '@/common/utils';
+import { noticeUnhandledError, parseResourceData } from '@/common/utils';
 import ModuleCard from '../common/ModuleCard';
 import { PackageSpec, ResourceData } from '@/common/types';
+import { getDetailsWithNotice } from '@/common/logics';
 
 type Props = {
   name: string;
@@ -19,11 +19,13 @@ const PackageDetail = (props: Props) => {
   const {
     data: resp,
     isPending,
-    isError
+    isError,
+    error
   } = useQuery({
     queryKey: [Module.Package, props.namespace, props.name],
-    queryFn: () => getPackageDetails(props.namespace, props.name)
+    queryFn: () => getDetailsWithNotice(Module.Package, props.namespace, props.name)
   });
+  noticeUnhandledError(isError, error);
   const data = resp?.data as ResourceData<PackageSpec>;
   return isError || !data ? (
     <EmptyPlaceHolder />

@@ -10,6 +10,8 @@ import {
     Specs
 } from './types';
 import { StatusCodes } from 'http-status-codes';
+import { placement } from './constants';
+import { notification } from 'antd';
 
 export function routePathOfOverviewPage(module: Module): string {
     return `${RoutePath.WorkBench}/${module}`;
@@ -58,4 +60,18 @@ export function mergeObjects<T>(objs: Record<string, T>[]): Record<string, T> {
 
 export function isRequestSuccess(resp: AgentStreamApiResp): boolean {
     return resp.code === StatusCodes.OK;
+}
+
+export function noticeUnhandledError(isError: boolean, error: Error | null) {
+    if (isError) {
+        notification.error({
+            message: 'Unknown Error!',
+            description: error!.message,
+            placement
+        });
+    }
+}
+
+export function capitalize(str: string): string {
+    return str.length < 1 ? str : str[0] + str.slice(1);
 }

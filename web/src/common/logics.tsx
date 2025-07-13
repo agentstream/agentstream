@@ -1,9 +1,17 @@
-import { deleteFunction } from '@/server/logics/function';
+import { deleteFunction, getFunctionDetails, listAllFunctions } from '@/server/logics/function';
 import { notification } from 'antd';
-import { KubernetesApiRespBody } from './types';
+import {
+  AgentStreamApiResp,
+  KubernetesApiRespBody,
+  ResourceData,
+  ResourceList,
+  SpecMap
+} from './types';
 import { placement } from './constants';
-import { deleteAgent } from '@/server/logics/agent';
-import { isRequestSuccess } from './utils';
+import { deleteAgent, getAgentDetails, listAllAgents } from '@/server/logics/agent';
+import { capitalize, isRequestSuccess } from './utils';
+import { getPackageDetails, listAllPackages } from '@/server/logics/package';
+import { Module } from './enum';
 
 export async function deleteFunctionInteraction(name: string, namespace: string) {
   const resp = await deleteFunction(name, namespace);
@@ -41,4 +49,46 @@ export function flattenFunctionConfig(config: [string, string][]): Record<string
   return config
     .map(([key, value]) => ({ [`config.${key}`]: value }))
     .reduce((obj1, obj2) => ({ ...obj1, ...obj2 }), {});
+}
+
+const listAll = {
+  [Module.Package]: listAllPackages,
+  [Module.Function]: listAllFunctions,
+  [Module.Agent]: listAllAgents
+};
+
+export async function listAllWithNotice<T extends Module, U = SpecMap[T]>(module: T) {
+  const resp = await listAll[module]();
+  if (!isRequestSuccess(resp)) {
+    const description = (resp.data as KubernetesApiRespBody)?.message ?? 'Something went wrong!';
+    notification.error({
+      message: 'Query Failed!',
+      description,
+      placement
+    });
+  }
+  return resp as AgentStreamApiResp<ResourceList<U>>;
+}
+
+const getDetails = {
+  [Module.Package]: getPackageDetails,
+  [Module.Function]: getFunctionDetails,
+  [Module.Agent]: getAgentDetails
+};
+
+export async function getDetailsWithNotice<T extends Module, U = SpecMap[T]>(
+  module: T,
+  namespace: string,
+  name: string
+) {
+  const resp = await getDetails[module](namespace, name);
+  if (!isRequestSuccess(resp)) {
+    const description = (resp.data as KubernetesApiRespBody)?.message ?? 'Something went wrong!';
+    notification.error({
+      message: `Query ${capitalize(module)} Failed!`,
+      description,
+      placement
+    });
+  }
+  return resp as AgentStreamApiResp<ResourceData<U>>;
 }

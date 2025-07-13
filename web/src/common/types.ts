@@ -2,7 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { configItemPrefix } from './constants';
 import { Module } from './enum';
 
-export type ResourceData<T extends Specs> = {
+export type ResourceData<T extends Specs | unknown> = {
     apiVersion: string;
     kind: string;
     metadata: Metadata;
@@ -74,7 +74,7 @@ export type Tool = {
     namespace: string;
 };
 
-type SpecMap = {
+export type SpecMap = {
     [Module.Package]: PackageSpec;
     [Module.Function]: FunctionSpec;
     [Module.Agent]: AgentSpec;

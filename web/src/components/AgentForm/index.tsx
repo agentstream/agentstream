@@ -2,10 +2,15 @@
 
 import { formLayout, placement } from '@/common/constants';
 import { googleAIModels, Module } from '@/common/enum';
+import { listAllWithNotice } from '@/common/logics';
 import { CreateAgentForm, FunctionSpec, KubernetesApiRespBody, ResourceList } from '@/common/types';
-import { isRequestSuccess, parseResourceData, routePathOfOverviewPage } from '@/common/utils';
+import {
+  noticeUnhandledError,
+  isRequestSuccess,
+  parseResourceData,
+  routePathOfOverviewPage
+} from '@/common/utils';
 import { createAgent } from '@/server/logics/agent';
-import { listAllFunctions } from '@/server/logics/function';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Card, Form, Input, notification, Row, Select, Space, Tag } from 'antd';
 import { redirect, RedirectType, useRouter } from 'next/navigation';
@@ -13,10 +18,16 @@ import { useState } from 'react';
 
 const AgentForm = () => {
   const [form] = Form.useForm();
-  const { data: resp, isPending } = useQuery({
+  const {
+    data: resp,
+    isPending,
+    isError,
+    error
+  } = useQuery({
     queryKey: [Module.Agent, 'create'],
-    queryFn: listAllFunctions
+    queryFn: () => listAllWithNotice(Module.Function)
   });
+  noticeUnhandledError(isError, error);
   const allFunctionsData = (resp?.data as ResourceList<FunctionSpec>)?.items ?? [];
   const modelOptions = googleAIModels.map(value => ({
     value,
