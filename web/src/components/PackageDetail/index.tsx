@@ -1,15 +1,13 @@
 'use client';
 
 import { Module } from '@/common/enum';
-import { useQuery } from '@tanstack/react-query';
 import EmptyPlaceHolder from '../common/EmptyPlaceHolder';
 import { Space, Spin, Typography } from 'antd';
 import DetailCard from '../common/DetailCard';
 import { noticeUnhandledError } from '@/common/utils';
 import ModuleCard from '../common/ModuleCard';
-import { PackageSpec, ResourceData } from '@/common/types';
 import { parseResourceData } from '@/common/logics';
-import { getDetailsWithNotice } from '@/common/interactions';
+import { useResourceDetails } from '@/hooks';
 
 type Props = {
   name: string;
@@ -17,17 +15,12 @@ type Props = {
 };
 
 const PackageDetail = (props: Props) => {
-  const {
-    data: resp,
-    isPending,
-    isError,
-    error
-  } = useQuery({
-    queryKey: [Module.Package, props.namespace, props.name],
-    queryFn: () => getDetailsWithNotice(Module.Package, props.namespace, props.name)
-  });
+  const { data, isPending, isError, error } = useResourceDetails(
+    Module.Package,
+    props.namespace,
+    props.name
+  );
   noticeUnhandledError(isError, error);
-  const data = resp?.data as ResourceData<PackageSpec>;
   return isError || !data ? (
     <EmptyPlaceHolder />
   ) : (

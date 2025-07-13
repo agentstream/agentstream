@@ -1,7 +1,6 @@
 'use client';
 
 import { Module } from '@/common/enum';
-import { listAllWithNotice } from '@/common/interactions';
 import { parseResourceData } from '@/common/logics';
 import { FunctionSpec, PackageSpec, ResourceData } from '@/common/types';
 import { isCreationEnabled, noticeUnhandledError } from '@/common/utils';
@@ -10,18 +9,12 @@ import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
 import LoadingPlaceHolder from '@/components/common/LoadingPlaceHolder';
 import ToolCard from '@/components/common/ToolCard';
 import { LogoContext, LogoContextProvider } from '@/contexts/LogoContext';
-import { useQuery } from '@tanstack/react-query';
+import { useResourceList } from '@/hooks';
 import { use, useContext } from 'react';
 
 export default function Page({ params }: { params: Promise<{ module: Module }> }) {
   const { module } = use(params);
-  const { data, isPending, isError, error, refetch } = useQuery({
-    queryKey: [module],
-    queryFn: async () => {
-      const resp = await listAllWithNotice(module);
-      return resp?.data?.items ?? [];
-    }
-  });
+  const { data, isPending, isError, error, refetch } = useResourceList(module);
   noticeUnhandledError(isError, error);
   const logos = useContext(LogoContext);
   const list = data ?? [];

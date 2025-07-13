@@ -2,33 +2,24 @@
 
 import { formLayout } from '@/common/constants';
 import { googleAIModels, Module } from '@/common/enum';
-import { createWithNotice, listAllWithNotice } from '@/common/interactions';
+import { createWithNotice } from '@/common/interactions';
 import { parseResourceData } from '@/common/logics';
-import { CreateAgentForm, FunctionSpec, ResourceList } from '@/common/types';
+import { CreateAgentForm } from '@/common/types';
 import { noticeUnhandledError, routePathOfOverviewPage } from '@/common/utils';
-import { useQuery } from '@tanstack/react-query';
+import { useResourceList } from '@/hooks';
 import { Button, Card, Form, Input, Row, Select, Space, Tag } from 'antd';
 import { redirect, RedirectType, useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 const AgentForm = () => {
   const [form] = Form.useForm();
-  const {
-    data: resp,
-    isPending,
-    isError,
-    error
-  } = useQuery({
-    queryKey: [Module.Agent, 'create'],
-    queryFn: () => listAllWithNotice(Module.Function)
-  });
+  const { data, isPending, isError, error } = useResourceList(Module.Function);
   noticeUnhandledError(isError, error);
-  const allFunctionsData = (resp?.data as ResourceList<FunctionSpec>)?.items ?? [];
   const modelOptions = googleAIModels.map(value => ({
     value,
     label: value
   }));
-  const functionOptions = allFunctionsData.map(item => {
+  const functionOptions = (data ?? []).map(item => {
     const { id, name } = parseResourceData(item);
     return {
       value: id,

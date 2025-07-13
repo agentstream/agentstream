@@ -2,7 +2,6 @@
 
 import { Module } from '@/common/enum';
 import { noticeUnhandledError, routePathOfOverviewPage } from '@/common/utils';
-import { useQuery } from '@tanstack/react-query';
 import { Button, Card, Form, Input, Row, Select, Space, Tag } from 'antd';
 import { useState } from 'react';
 import { redirect, RedirectType, useRouter } from 'next/navigation';
@@ -10,21 +9,14 @@ import { CreateFunctionForm } from '@/common/types';
 import { formLayout } from '@/common/constants';
 import { flattenFunctionConfig, parseResourceData } from '@/common/logics';
 import { useUpdateEffect } from 'react-use';
-import { createWithNotice, listAllWithNotice } from '@/common/interactions';
+import { createWithNotice } from '@/common/interactions';
+import { useResourceList } from '@/hooks';
 
 const FunctionForm = () => {
   const [form] = Form.useForm();
-  const {
-    data: resp,
-    isPending,
-    isError,
-    error
-  } = useQuery({
-    queryKey: [Module.Function, 'create'],
-    queryFn: () => listAllWithNotice(Module.Package)
-  });
+  const { data, isPending, isError, error } = useResourceList(Module.Package);
   noticeUnhandledError(isError, error);
-  const allPackagesData = resp?.data.items ?? [];
+  const allPackagesData = data ?? [];
   const packageOptions = allPackagesData.map(item => {
     const { id, name } = parseResourceData(item);
     return {
