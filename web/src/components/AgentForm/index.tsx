@@ -17,7 +17,7 @@ const AgentForm = () => {
     queryKey: [Module.Agent, 'create'],
     queryFn: listAllFunctions
   });
-  const allFunctionsData = (resp?.data as ResourceList<FunctionSpec>).items ?? [];
+  const allFunctionsData = (resp?.data as ResourceList<FunctionSpec>)?.items ?? [];
   const modelOptions = googleAIModels.map(value => ({
     value,
     label: value
