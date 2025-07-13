@@ -13,17 +13,12 @@ import { isRequestSuccess, mergeObjects } from '@/common/utils';
 import { configItemPrefix } from '@/common/constants';
 import { buildErrorResponse, buildMutateResponse, buildQueryResponse } from '../common/utils';
 import { buildSink, buildSources } from './common';
-
-const version = 'v1alpha1';
-const group = 'fs.functionstream.github.io';
-const plural = 'functions';
+import { FunctionConfig } from '../common/config';
 
 export async function listAllFunctions() {
     try {
         const resp = (await client.listCustomObjectForAllNamespaces({
-            group,
-            version,
-            plural
+            ...FunctionConfig
         })) as ResourceList<FunctionSpec>;
         return buildQueryResponse(resp);
     } catch (err) {
@@ -34,10 +29,8 @@ export async function listAllFunctions() {
 export async function getFunctionDetails(namespace: string, name: string) {
     try {
         const resp = (await client.getNamespacedCustomObject({
-            group,
-            version,
+            ...FunctionConfig,
             namespace,
-            plural,
             name
         })) as ResourceData<FunctionSpec>;
         return buildQueryResponse(resp);
@@ -49,6 +42,7 @@ export async function getFunctionDetails(namespace: string, name: string) {
 export async function createFunction(form: CreateFunctionForm) {
     const { name, description, package: pak, module, sources, sink } = form;
     const [namespace, packageName] = pak.split('/');
+    const { group, version } = FunctionConfig;
     const body = {
         apiVersion: `${group}/${version}`,
         kind: ResourceKind.Function,
@@ -68,10 +62,8 @@ export async function createFunction(form: CreateFunctionForm) {
     };
     try {
         const resp = (await client.createNamespacedCustomObject({
-            group,
-            version,
+            ...FunctionConfig,
             namespace,
-            plural,
             body
         })) as ResourceData<FunctionSpec>;
         return buildMutateResponse(resp.metadata);
@@ -83,10 +75,8 @@ export async function createFunction(form: CreateFunctionForm) {
 export async function deleteFunction(name: string, namespace: string) {
     try {
         const resp = (await client.deleteNamespacedCustomObject({
-            group,
-            version,
+            ...FunctionConfig,
             namespace,
-            plural,
             name
         })) as ResourceData<FunctionSpec>;
         return buildMutateResponse(resp.metadata);
@@ -105,6 +95,7 @@ export async function updateFunction(form: UpdateFunctionForm) {
         metadata: { resourceVersion },
         spec: { package: pak, module }
     } = query.data as ResourceData<FunctionSpec>;
+    const { group, version } = FunctionConfig;
     const body = {
         apiVersion: `${group}/${version}`,
         kind: ResourceKind.Function,
@@ -125,11 +116,9 @@ export async function updateFunction(form: UpdateFunctionForm) {
     };
     try {
         const resp = (await client.replaceNamespacedCustomObject({
+            ...FunctionConfig,
             name,
-            group,
-            version,
             namespace,
-            plural,
             body
         })) as ResourceData<FunctionSpec>;
         return buildMutateResponse(resp.metadata);

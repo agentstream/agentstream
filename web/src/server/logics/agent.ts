@@ -14,18 +14,14 @@ import { client } from '../infra/k8s';
 import { ResourceKind } from '../common/enum';
 import { buildSink, buildSources } from './common';
 import { buildErrorResponse, buildMutateResponse, buildQueryResponse } from '../common/utils';
+import { AgentConfig } from '../common/config';
 
-const version = 'v1alpha1';
-const group = 'as.agentstream.github.io';
-const plural = 'agents';
 const namespace = 'default';
 
 export async function listAllAgents() {
     try {
         const resp = (await client.listCustomObjectForAllNamespaces({
-            group,
-            version,
-            plural
+            ...AgentConfig
         })) as ResourceList<AgentSpec>;
         return buildQueryResponse(resp);
     } catch (err) {
@@ -36,10 +32,8 @@ export async function listAllAgents() {
 export async function getAgentDetails(namespace: string, name: string) {
     try {
         const resp = (await client.getNamespacedCustomObject({
-            group,
-            version,
+            ...AgentConfig,
             namespace,
-            plural,
             name
         })) as ResourceData<AgentSpec>;
         return buildQueryResponse(resp);
@@ -50,6 +44,7 @@ export async function getAgentDetails(namespace: string, name: string) {
 
 export async function createAgent(form: CreateAgentForm) {
     const { name, description, model, googleApiKey, instruction, functions, sources, sink } = form;
+    const { group, version } = AgentConfig;
     const body = {
         apiVersion: `${group}/${version}`,
         kind: ResourceKind.Agent,
@@ -72,10 +67,8 @@ export async function createAgent(form: CreateAgentForm) {
     };
     try {
         const resp = (await client.createNamespacedCustomObject({
-            group,
-            version,
+            ...AgentConfig,
             namespace,
-            plural,
             body
         })) as ResourceData<AgentSpec>;
         return buildMutateResponse(resp.metadata);
@@ -87,10 +80,8 @@ export async function createAgent(form: CreateAgentForm) {
 export async function deleteAgent(name: string, namespace: string): Promise<AgentStreamApiResp> {
     try {
         const resp = (await client.deleteNamespacedCustomObject({
-            group,
-            version,
+            ...AgentConfig,
             namespace,
-            plural,
             name
         })) as ResourceData<AgentSpec>;
         return buildMutateResponse(resp.metadata);
@@ -115,12 +106,11 @@ export async function updateAgent(form: UpdateAgentForm): Promise<AgentStreamApi
         const {
             metadata: { resourceVersion }
         } = (await client.getNamespacedCustomObject({
-            group,
-            version,
+            ...AgentConfig,
             namespace,
-            plural,
             name
         })) as ResourceData<AgentSpec>;
+        const { group, version } = AgentConfig;
         const body = {
             apiVersion: `${group}/${version}`,
             kind: ResourceKind.Agent,
@@ -143,11 +133,9 @@ export async function updateAgent(form: UpdateAgentForm): Promise<AgentStreamApi
             }
         };
         const resp = (await client.replaceNamespacedCustomObject({
+            ...AgentConfig,
             name,
-            group,
-            version,
             namespace,
-            plural,
             body
         })) as ResourceData<AgentSpec>;
         return buildMutateResponse(resp.metadata);
