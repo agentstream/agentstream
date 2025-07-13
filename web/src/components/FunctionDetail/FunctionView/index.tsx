@@ -2,14 +2,13 @@
 
 import { Module } from '@/common/enum';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
-import { useQuery } from '@tanstack/react-query';
 import { Button, Form, Input, Row, Skeleton, Space, Tag } from 'antd';
 import { formLayout } from '@/common/constants';
-import { FunctionSpec, PackageSpec, ResourceData } from '@/common/types';
 import { useEffect, useState } from 'react';
 import { flattenFunctionConfig } from '@/common/logics';
 import { noticeUnhandledError } from '@/common/utils';
-import { getDetailsWithNotice, updateWithNotice } from '@/common/interactions';
+import { updateWithNotice } from '@/common/interactions';
+import { useResourceDetails } from '@/hooks';
 
 type Props = {
   name: string;
@@ -20,33 +19,20 @@ type Props = {
 
 const FunctionView = (props: Props) => {
   const [form] = Form.useForm();
-  const {
-    data: resp,
-    isPending,
-    isError,
-    error,
-    refetch
-  } = useQuery({
-    queryKey: [Module.Function, props.namespace, props.name],
-    queryFn: () => getDetailsWithNotice(Module.Function, props.namespace, props.name)
-  });
+  const { data, isPending, isError, error, refetch } = useResourceDetails(
+    Module.Function,
+    props.namespace,
+    props.name
+  );
   noticeUnhandledError(isError, error);
-  const data = resp?.data as ResourceData<FunctionSpec>;
   const config = Object.entries(data?.spec.config ?? {});
   const configIsNotEmpty = config.length > 0;
   const name = (data?.spec.displayName || data?.metadata.name) ?? '';
   const {
-    data: pakResp,
+    data: pakData,
     isPending: pakIsPending,
     isError: pakIsError
-  } = useQuery({
-    queryKey: [Module.Function, props.namespace, data?.spec.package],
-    queryFn: () =>
-      data?.spec.package
-        ? getDetailsWithNotice(Module.Package, props.namespace, data.spec.package)
-        : null
-  });
-  const pakData = pakResp?.data as ResourceData<PackageSpec>;
+  } = useResourceDetails(Module.Package, props.namespace, data?.spec.package ?? '');
   const packageName = pakData?.spec.displayName || pakData?.metadata.name;
   const moduleName =
     (pakData?.spec.modules ?? {})[data?.spec.module ?? '']?.displayName ?? data?.spec.module;

@@ -13,6 +13,11 @@ export const enum RoutePath {
     WorkBench = '/workbench'
 }
 
+export const enum QueryCacheKey {
+    List,
+    Detail
+}
+
 // https://ai.google.dev/gemini-api/docs/models
 export const googleAIModels = [
     'gemini-2.5-pro',

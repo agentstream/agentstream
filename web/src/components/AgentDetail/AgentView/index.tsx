@@ -2,12 +2,11 @@
 
 import { formLayout } from '@/common/constants';
 import { googleAIModels, Module } from '@/common/enum';
-import { getDetailsWithNotice, listAllWithNotice, updateWithNotice } from '@/common/interactions';
+import { updateWithNotice } from '@/common/interactions';
 import { parseResourceData } from '@/common/logics';
-import { AgentSpec, FunctionSpec, ResourceData, ResourceList } from '@/common/types';
 import { noticeUnhandledError } from '@/common/utils';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
-import { useQuery } from '@tanstack/react-query';
+import { useResourceDetails, useResourceList } from '@/hooks';
 import { Button, Card, Form, Input, Row, Select, Skeleton, Space, Tag } from 'antd';
 import { useEffect, useState } from 'react';
 
@@ -20,30 +19,20 @@ type Props = {
 
 const AgentView = (props: Props) => {
   const [form] = Form.useForm();
-  const {
-    data: resp,
-    isPending,
-    isError,
-    error,
-    refetch
-  } = useQuery({
-    queryKey: [Module.Agent, props.namespace, props.name],
-    queryFn: () => getDetailsWithNotice(Module.Agent, props.namespace, props.name)
-  });
+  const { data, isPending, isError, error, refetch } = useResourceDetails(
+    Module.Agent,
+    props.namespace,
+    props.name
+  );
   noticeUnhandledError(isError, error);
-  const data = resp?.data as ResourceData<AgentSpec>;
   const {
     data: funcResp,
     isPending: funcIsPending,
     isError: funcIsError,
     error: funcError
-  } = useQuery({
-    queryKey: [Module.Agent, 'config'],
-    queryFn: () => listAllWithNotice(Module.Function)
-  });
+  } = useResourceList(Module.Function);
   noticeUnhandledError(funcIsError, funcError);
-  const funcData = funcResp?.data as ResourceList<FunctionSpec>;
-  const allFunctionsData = funcData?.items ?? [];
+  const allFunctionsData = funcResp ?? [];
   const funcNames = allFunctionsData
     .map(f => ({
       [`${f.metadata.namespace}/${f.metadata.name}`]: f.spec.displayName
