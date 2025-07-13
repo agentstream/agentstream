@@ -1,6 +1,7 @@
 'use server';
 
 import {
+    AgentSpec,
     CreateFunctionForm,
     FunctionSpec,
     ResourceData,
@@ -9,11 +10,12 @@ import {
 } from '@/common/types';
 import { client } from '../infra/k8s';
 import { ResourceKind } from '../common/enum';
-import { isRequestSuccess, mergeObjects } from '@/common/utils';
+import { isRequestSuccess, mergeObjects, serializeToJSON } from '@/common/utils';
 import { configItemPrefix } from '@/common/constants';
 import { buildErrorResponse, buildMutateResponse, buildQueryResponse } from '../common/utils';
 import { buildSink, buildSources } from './common';
-import { FunctionConfig } from '../common/config';
+import { AgentConfig, FunctionConfig } from '../common/config';
+import { StatusCodes } from 'http-status-codes';
 
 export async function listAllFunctions() {
     try {
@@ -72,8 +74,25 @@ export async function createFunction(form: CreateFunctionForm) {
     }
 }
 
+async function isFunctionUsed(name: string, namespace: string) {
+    const resp = (await client.listCustomObjectForAllNamespaces({
+        ...AgentConfig
+    })) as ResourceList<AgentSpec>;
+    return resp.items.some(item =>
+        item.spec.tools.some(tool => tool.namespace === namespace && tool.name === name)
+    );
+}
+
 export async function deleteFunction(name: string, namespace: string) {
     try {
+        if (await isFunctionUsed(name, namespace)) {
+            return buildErrorResponse({
+                code: StatusCodes.BAD_REQUEST,
+                body: serializeToJSON({
+                    message: 'The function is used by agent!'
+                })
+            });
+        }
         const resp = (await client.deleteNamespacedCustomObject({
             ...FunctionConfig,
             namespace,
