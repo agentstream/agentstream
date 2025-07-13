@@ -10,13 +10,16 @@ import { notification } from '@/common/antd';
 import { placement } from './constants';
 import {
     AgentStreamApiResp,
+    ChangableModule,
     CreateAgentForm,
+    CreateForm,
     CreateFunctionForm,
     KubernetesApiRespBody,
     ResourceData,
     ResourceList,
     SpecMap,
     UpdateAgentForm,
+    UpdateForm,
     UpdateFunctionForm
 } from './types';
 import {
@@ -28,10 +31,6 @@ import {
 } from '@/server/logics/agent';
 import { Module } from './enum';
 import { getPackageDetails, listAllPackages } from '@/server/logics/package';
-
-type ChangableModule = Module.Function | Module.Agent;
-
-type CreateForm = CreateFunctionForm | CreateAgentForm;
 
 function isCreateFunctionForm(module: Module, form: CreateForm): form is CreateFunctionForm {
     return module === Module.Function;
@@ -87,8 +86,6 @@ export async function deleteWithNotice<T extends ChangableModule>(
     const resp = await deleteAction[module](name, namespace);
     return checkMutateResult(module, Mutate.Delete, resp);
 }
-
-type UpdateForm = UpdateFunctionForm | UpdateAgentForm;
 
 function isUpdateFunctionForm(module: Module, form: UpdateForm): form is UpdateFunctionForm {
     return module === Module.Function;

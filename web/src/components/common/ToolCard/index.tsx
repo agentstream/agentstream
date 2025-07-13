@@ -2,13 +2,13 @@
 
 import { Module } from '@/common/enum';
 import { ResourceInfo } from '@/common/types';
-import { isCreationEnabled, routePathOfDetailPage } from '@/common/utils';
+import { routePathOfDetailPage } from '@/common/utils';
 import Icon, { DeleteOutlined, QuestionCircleTwoTone, RobotOutlined } from '@ant-design/icons';
 import { Avatar, Card, Space, Typography } from 'antd';
 import { useRouter } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 import DeleteButton from '../DeleteButton';
-import { deleteWithNotice } from '@/common/interactions';
+import { useDeleteResource } from '@/hooks';
 
 type Props = {
   info: ResourceInfo;
@@ -27,12 +27,10 @@ const ToolCard = (props: Props) => {
   function handleClick() {
     router.push(routePathOfDetailPage(props.type, encodeURIComponent(props.info.id)));
   }
+  const { mutate } = useDeleteResource(props.type, props.refresh);
   async function handleDelete() {
     const [namespace, name] = props.info.id.split('/');
-    if (isCreationEnabled(props.type)) {
-      await deleteWithNotice(props.type, name, namespace);
-    }
-    props.refresh();
+    mutate({ namespace, name });
   }
   return (
     <Card className="min-w-64 h-40" variant="borderless">

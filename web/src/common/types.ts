@@ -167,3 +167,9 @@ export type UpdateAgentForm = {
 } & CreateAgentForm;
 
 export type ResourceID = `${string}/${string}`;
+
+export type ChangableModule = Module.Function | Module.Agent;
+
+export type CreateForm = CreateFunctionForm | CreateAgentForm;
+
+export type UpdateForm = UpdateFunctionForm | UpdateAgentForm;

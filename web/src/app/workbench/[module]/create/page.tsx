@@ -5,7 +5,7 @@ import { useModule } from '@/hooks';
 import { notFound } from 'next/navigation';
 import FunctionForm from '@/components/FunctionForm';
 import AgentForm from '@/components/AgentForm';
-import { isCreationEnabled } from '@/common/utils';
+import { canChange } from '@/common/utils';
 
 const createForms = {
   [Module.Package]: null,
@@ -15,7 +15,7 @@ const createForms = {
 
 export default function Page() {
   const mod = useModule();
-  if (!isCreationEnabled(mod)) {
+  if (!canChange(mod)) {
     notFound();
   }
   return createForms[mod];

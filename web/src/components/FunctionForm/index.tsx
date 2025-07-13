@@ -4,13 +4,11 @@ import { Module } from '@/common/enum';
 import { noticeUnhandledError, routePathOfOverviewPage } from '@/common/utils';
 import { Button, Card, Form, Input, Row, Select, Space, Tag } from 'antd';
 import { useState } from 'react';
-import { redirect, RedirectType, useRouter } from 'next/navigation';
-import { CreateFunctionForm } from '@/common/types';
+import { useRouter } from 'next/navigation';
 import { formLayout } from '@/common/constants';
 import { flattenFunctionConfig, parseResourceData } from '@/common/logics';
 import { useUpdateEffect } from 'react-use';
-import { createWithNotice } from '@/common/interactions';
-import { useResourceList } from '@/hooks';
+import { useCreateResource, useResourceList } from '@/hooks';
 
 const FunctionForm = () => {
   const [form] = Form.useForm();
@@ -41,18 +39,16 @@ const FunctionForm = () => {
   const configIsNotEmpty = config.length > 0;
   const [sources, setSources] = useState('');
   const validSources = sources.split(',').filter(source => source !== '');
-  async function handleSubmit(form: CreateFunctionForm) {
-    if (await createWithNotice(Module.Function, form)) {
-      redirect(routePathOfOverviewPage(Module.Function), RedirectType.push);
-    }
-  }
   const router = useRouter();
+  const { mutate } = useCreateResource(Module.Function, () =>
+    router.replace(routePathOfOverviewPage(Module.Function))
+  );
   return (
     <Form
       form={form}
       name={Module.Function}
       {...formLayout}
-      onFinish={handleSubmit}
+      onFinish={mutate}
       initialValues={flattenFunctionConfig(config)}
     >
       <Form.Item
