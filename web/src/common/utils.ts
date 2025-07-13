@@ -59,6 +59,6 @@ export function capitalize(str: string): string {
     return str.length < 1 ? str : str[0] + str.slice(1);
 }
 
-export function isCreationEnabled(module: Module): boolean {
+export function isCreationEnabled(module: Module): module is Module.Function | Module.Agent {
     return [Module.Function, Module.Agent].includes(module);
 }

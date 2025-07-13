@@ -2,13 +2,13 @@
 
 import { Module } from '@/common/enum';
 import { ResourceInfo } from '@/common/types';
-import { routePathOfDetailPage } from '@/common/utils';
+import { isCreationEnabled, routePathOfDetailPage } from '@/common/utils';
 import Icon, { DeleteOutlined, QuestionCircleTwoTone, RobotOutlined } from '@ant-design/icons';
 import { Avatar, Card, Space, Typography } from 'antd';
 import { useRouter } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 import DeleteButton from '../DeleteButton';
-import { deleteAgentInteraction, deleteFunctionInteraction } from '@/common/logics';
+import { deleteWithNotice } from '@/common/interactions';
 
 type Props = {
   info: ResourceInfo;
@@ -29,15 +29,8 @@ const ToolCard = (props: Props) => {
   }
   async function handleDelete() {
     const [namespace, name] = props.info.id.split('/');
-    switch (props.type) {
-      case Module.Function:
-        await deleteFunctionInteraction(name, namespace);
-        break;
-      case Module.Agent:
-        await deleteAgentInteraction(name, namespace);
-        break;
-      default:
-        return;
+    if (isCreationEnabled(props.type)) {
+      await deleteWithNotice(props.type, name, namespace);
     }
     props.refresh();
   }

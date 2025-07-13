@@ -4,11 +4,11 @@ import { Button, Tabs } from 'antd';
 import FunctionView from './FunctionView';
 import DeleteButton from '../common/DeleteButton';
 import { Module } from '@/common/enum';
-import { deleteFunctionInteraction } from '@/common/logics';
 import { routePathOfOverviewPage } from '@/common/utils';
 import { redirect, RedirectType } from 'next/navigation';
 import { useState } from 'react';
 import UnderDeveloping from '../common/UnderDeveloping';
+import { deleteWithNotice } from '@/common/interactions';
 
 type Props = {
   name: string;
@@ -18,7 +18,7 @@ type Props = {
 const FunctionDetail = (props: Props) => {
   const [inEditing, setInEditing] = useState(false);
   async function handleDelete() {
-    await deleteFunctionInteraction(props.name, props.namespace);
+    await deleteWithNotice(Module.Function, props.name, props.namespace);
     redirect(routePathOfOverviewPage(Module.Function), RedirectType.replace);
   }
   return (

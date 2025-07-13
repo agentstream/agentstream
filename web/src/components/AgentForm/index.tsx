@@ -1,17 +1,13 @@
 'use client';
 
-import { formLayout, placement } from '@/common/constants';
+import { formLayout } from '@/common/constants';
 import { googleAIModels, Module } from '@/common/enum';
-import { listAllWithNotice, parseResourceData } from '@/common/logics';
-import { CreateAgentForm, FunctionSpec, KubernetesApiRespBody, ResourceList } from '@/common/types';
-import {
-  noticeUnhandledError,
-  isRequestSuccess,
-  routePathOfOverviewPage
-} from '@/common/utils';
-import { createAgent } from '@/server/logics/agent';
+import { createWithNotice, listAllWithNotice } from '@/common/interactions';
+import { parseResourceData } from '@/common/logics';
+import { CreateAgentForm, FunctionSpec, ResourceList } from '@/common/types';
+import { noticeUnhandledError, routePathOfOverviewPage } from '@/common/utils';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Card, Form, Input, notification, Row, Select, Space, Tag } from 'antd';
+import { Button, Card, Form, Input, Row, Select, Space, Tag } from 'antd';
 import { redirect, RedirectType, useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -44,19 +40,8 @@ const AgentForm = () => {
   const validSources = sources.split(',').filter(source => source !== '');
   const router = useRouter();
   async function handleSubmit(form: CreateAgentForm) {
-    const resp = await createAgent(form);
-    if (isRequestSuccess(resp)) {
-      notification.success({
-        message: 'Creation Success!',
-        placement
-      });
+    if (await createWithNotice(Module.Agent, form)) {
       redirect(routePathOfOverviewPage(Module.Agent), RedirectType.push);
-    } else {
-      notification.error({
-        message: 'Creation failed!',
-        description: (resp.data as KubernetesApiRespBody).message,
-        placement
-      });
     }
   }
   return (

@@ -1,17 +1,16 @@
 'use client';
 
 import { Module } from '@/common/enum';
-import { noticeUnhandledError, isRequestSuccess, routePathOfOverviewPage } from '@/common/utils';
-import { createFunction } from '@/server/logics/function';
+import { noticeUnhandledError, routePathOfOverviewPage } from '@/common/utils';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Card, Form, Input, Row, Select, Space, Tag } from 'antd';
-import { notification } from '@/common/antd';
 import { useState } from 'react';
 import { redirect, RedirectType, useRouter } from 'next/navigation';
-import { CreateFunctionForm, KubernetesApiRespBody } from '@/common/types';
-import { formLayout, placement } from '@/common/constants';
-import { flattenFunctionConfig, listAllWithNotice, parseResourceData } from '@/common/logics';
+import { CreateFunctionForm } from '@/common/types';
+import { formLayout } from '@/common/constants';
+import { flattenFunctionConfig, parseResourceData } from '@/common/logics';
 import { useUpdateEffect } from 'react-use';
+import { createWithNotice, listAllWithNotice } from '@/common/interactions';
 
 const FunctionForm = () => {
   const [form] = Form.useForm();
@@ -51,19 +50,8 @@ const FunctionForm = () => {
   const [sources, setSources] = useState('');
   const validSources = sources.split(',').filter(source => source !== '');
   async function handleSubmit(form: CreateFunctionForm) {
-    const resp = await createFunction(form);
-    if (isRequestSuccess(resp)) {
-      notification.success({
-        message: 'Creation Success!',
-        placement
-      });
+    if (await createWithNotice(Module.Function, form)) {
       redirect(routePathOfOverviewPage(Module.Function), RedirectType.push);
-    } else {
-      notification.error({
-        message: 'Creation failed!',
-        description: (resp.data as KubernetesApiRespBody).message,
-        placement
-      });
     }
   }
   const router = useRouter();
