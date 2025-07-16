@@ -1,7 +1,8 @@
 
 
 **/venv
-
-# macOS metadata files
+.idea
+**/*.pyc
 ._*
 **/.DS_Store
+
