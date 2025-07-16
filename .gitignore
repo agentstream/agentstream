@@ -1,3 +1,7 @@
 
 
-**/venv\n# macOS metadata files\n._*\n**/.DS_Store
+**/venv
+
+# macOS metadata files
+._*
+**/.DS_Store
