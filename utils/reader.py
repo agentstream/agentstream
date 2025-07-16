@@ -32,9 +32,10 @@ def main():
     parser = argparse.ArgumentParser(description='Read messages from a Pulsar topic.')
     parser.add_argument('--pulsar-url', type=str, default='pulsar://localhost:6650')
     parser.add_argument('--topic', type=str, required=True, help='Pulsar topic to read from')
-    parser.add_argument('--seek_time', type=str, required=True, help='Seek time in format YYYY-MM-DD HH:MM:SS')
+    parser.add_argument('--seek_time', type=str, required=False, default=datetime.now().strftime('%Y-%m-%d %H:%M:%S'), help='Seek time in format YYYY-MM-DD HH:MM:SS')
     parser.add_argument('--num', type=int, default=10, help='Number of messages to read')
     args = parser.parse_args()
+    global client
     client = pulsar.Client(args.pulsar_url)
 
     try:
