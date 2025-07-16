@@ -40,6 +40,14 @@ spec:
             - name: PULSAR_SERVICE_URL
               value: {{ .Values.pulsar.serviceUrl }}
             {{- end }}
+            {{- if .Values.pulsar.authPlugin }}
+            - name: PULSAR_AUTH_PLUGIN
+              value: {{ .Values.pulsar.authPlugin }}
+            {{- end }}
+            {{- if .Values.pulsar.authParams }}
+            - name: PULSAR_AUTH_PARAMS
+              value: {{ .Values.pulsar.authParams }}
+            {{- end }}
             {{- range $key, $value := .Values.controllerManager.container.env }}
             - name: {{ $key }}
               value: {{ $value }}
