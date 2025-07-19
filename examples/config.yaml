@@ -9,12 +9,12 @@ config:
                     A tool that returns the current time.
                 requestSource: request_current_time
     model:
-        googleApiKey: AIzaSyAk-iIAZOxUjs9MdeEtQ2AFScz8TG6BnU4
+        googleApiKey: <API-KEY>
         model: gemini-2.0-flash
     pulsarRpc:
         authParams: ""
         authPlugin: ""
-        serviceUrl: pulsar://192.168.31.80:6650
+        serviceUrl: pulsar://localhost:6650
     responseSource:
         pulsar:
             topic: agent_response
@@ -25,7 +25,7 @@ package: agent
 pulsar:
     authParams: ""
     authPlugin: ""
-    serviceUrl: pulsar://192.168.31.80:6650
+    serviceUrl: pulsar://localhost:6650
 requestSource:
     pulsar:
         topic: request_agent
