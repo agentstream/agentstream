@@ -38,9 +38,16 @@ class AgentFunction(FSModule):
 
     def init(self, context: FSContext):
         self.config = AgentConfig.model_validate(context.get_configs())
+        
+        # Extract auth parameters from PulsarConfig if available
+        auth_plugin = self.config.pulsarRpc.authPlugin
+        auth_params = self.config.pulsarRpc.authParams
+        
         self.rpc_manager = PulsarRPCManager(
             service_url=self.config.pulsarRpc.serviceUrl,
             response_topic=self.config.responseSource.pulsar.topic,
+            auth_plugin=auth_plugin,
+            auth_params=auth_params,
         )
         self.session_service = InMemorySessionService()
         self.runner = None

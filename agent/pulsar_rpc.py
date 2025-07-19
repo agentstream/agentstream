@@ -15,17 +15,33 @@ class PulsarRPCManager:
     This class provides functionality for making asynchronous RPC calls and handling responses.
     """
 
-    def __init__(self, service_url: str, response_topic: str):
+    def __init__(self, service_url: str, response_topic: str, auth_plugin: Optional[str] = None, auth_params: Optional[str] = None):
         """
         Initialize the PulsarRPCManager.
 
         Args:
             service_url (str): The Pulsar service URL (e.g., 'pulsar://localhost:6650')
             response_topic (str): The topic where responses will be received
+            auth_plugin (Optional[str]): The authentication plugin type (e.g., 'tls', 'token', 'oauth2')
+            auth_params (Optional[str]): The authentication parameters (format depends on auth_plugin)
         """
         self.service_url = service_url
         self.response_topic = response_topic
-        self.client = Client(service_url)
+        
+        # Create authentication object if provided
+        authentication = None
+        if auth_plugin and auth_params and auth_plugin.strip() and auth_params.strip():
+            try:
+                authentication = pulsar.Authentication(auth_plugin.strip(), auth_params.strip())
+                logger.info(f"Creating Pulsar client with authentication: {auth_plugin}")
+            except Exception as e:
+                logger.error(f"Failed to create authentication: {str(e)}")
+                raise Exception(f"Authentication failed: {str(e)}")
+        else:
+            logger.info("Creating Pulsar client without authentication")
+        
+        # Create client with or without authentication
+        self.client = Client(service_url, authentication=authentication)
         
         # Dictionary to store pending requests, keyed by request_id
         self._pending_requests: Dict[str, asyncio.Future] = {}
