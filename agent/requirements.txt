@@ -1,5 +1,6 @@
 # Core dependencies
 pydantic
+function-stream
 
 # Google ADK and GenAI dependencies
 google-adk
@@ -13,3 +14,11 @@ jsonnet>=0.20.0
 
 # Type hints support
 typing-extensions
+
+# Database dependencies
+asyncpg
+sqlalchemy[asyncio]
+
+# Testing dependencies
+pytest
+pytest-asyncio
