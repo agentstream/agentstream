@@ -37,6 +37,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	asv1alpha1 "github.com/agentstream/agentstream/operator/api/v1alpha1"
+	"github.com/google/uuid"
 )
 
 type Config struct {
@@ -170,7 +171,30 @@ func (r *AgentReconciler) buildFunctionConfig(ctx context.Context, agent *asv1al
 		Raw: pulsarCfgBytes,
 	}
 
-	responseSourceBytes, err := json.Marshal(agent.Spec.ResponseSource)
+	// Check if ResponseSource is nil or empty, and set default if needed
+	responseSource := agent.Spec.ResponseSource
+	if responseSource == nil {
+		// Generate default response source topic
+		defaultTopic := fmt.Sprintf("non-persistent://public/default/response-source-%s-%s", agent.Name, uuid.New().String())
+
+		// Create default ResponseSource
+		responseSource = &fsv1alpha1.SourceSpec{
+			Pulsar: &fsv1alpha1.PulsarSourceSpec{
+				Topic: defaultTopic,
+			},
+		}
+
+		// Update the agent resource with the default response source
+		agent.Spec.ResponseSource = responseSource
+		if err := r.Update(ctx, agent); err != nil {
+			return nil, fmt.Errorf("failed to update agent with default response source: %v", err)
+		}
+	} else if responseSource.Pulsar == nil || responseSource.Pulsar.Topic == "" {
+		// If ResponseSource is set but Pulsar is nil or Topic is empty, throw an error
+		return nil, fmt.Errorf("invalid ResponseSource configuration: ResponseSource is set but Pulsar is nil or Topic is empty")
+	}
+
+	responseSourceBytes, err := json.Marshal(responseSource)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal response source: %v", err)
 	}

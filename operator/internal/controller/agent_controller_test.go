@@ -20,14 +20,13 @@ import (
 	"context"
 	"time"
 
+	fsv1alpha1 "github.com/FunctionStream/function-stream/operator/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	fsv1alpha1 "github.com/FunctionStream/function-stream/operator/api/v1alpha1"
 	asv1alpha1 "github.com/agentstream/agentstream/operator/api/v1alpha1"
 )
 
@@ -121,14 +120,16 @@ var _ = Describe("Agent Controller", func() {
 				},
 			}
 
-			// This will fail because FunctionStream CRDs are not available in test environment
-			// but we can test that the reconciliation starts properly
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: typeNamespacedName,
 			})
-			// We expect an error because FunctionStream types are not available in test env
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("no matches for kind"))
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify that the Function was created
+			function := &fsv1alpha1.Function{}
+			Expect(k8sClient.Get(ctx, typeNamespacedName, function)).To(Succeed())
+			Expect(function.Name).To(Equal(resourceName))
+			Expect(function.Namespace).To(Equal(namespace))
 		})
 
 		It("Should handle agent with complex configuration", func() {
@@ -367,6 +368,166 @@ var _ = Describe("Agent Controller", func() {
 			Expect(cfg["pulsarRpc"].Raw).NotTo(BeEmpty())
 			Expect(cfg["responseSource"].Raw).NotTo(BeEmpty())
 			Expect(cfg["agent"].Raw).NotTo(BeEmpty())
+		})
+
+		It("Should set default response source when ResponseSource is nil", func() {
+			agent := &asv1alpha1.Agent{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-agent-no-response",
+					Namespace: "default",
+				},
+				Spec: asv1alpha1.AgentSpec{
+					DisplayName: "Test Agent No Response",
+					Description: "A test agent without response source",
+					Instruction: "Test instruction",
+					Model: asv1alpha1.ModelConfig{
+						Model:        "gpt-4",
+						GoogleApiKey: "test-key",
+					},
+					// ResponseSource is intentionally nil
+				},
+			}
+
+			// Create the agent in the database first
+			Expect(k8sClient.Create(ctx, agent)).To(Succeed())
+
+			controllerReconciler := &AgentReconciler{
+				Client: k8sClient,
+				Scheme: k8sClient.Scheme(),
+				Config: Config{
+					PulsarServiceURL: "pulsar://test:6650",
+					PulsarAuthPlugin: "test-plugin",
+					PulsarAuthParams: "test-params",
+				},
+			}
+
+			// Call the public Reconcile method to test the real reconcile logic
+			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      agent.Name,
+					Namespace: agent.Namespace,
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify that the agent now has a ResponseSource set by checking the updated resource
+			updatedAgent := &asv1alpha1.Agent{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Name:      agent.Name,
+				Namespace: agent.Namespace,
+			}, updatedAgent)).To(Succeed())
+
+			Expect(updatedAgent.Spec.ResponseSource).NotTo(BeNil())
+			Expect(updatedAgent.Spec.ResponseSource.Pulsar).NotTo(BeNil())
+			Expect(updatedAgent.Spec.ResponseSource.Pulsar.Topic).To(ContainSubstring("non-persistent://public/default/response-source-test-agent-no-response-"))
+
+			// Verify that the Function was created
+			function := &fsv1alpha1.Function{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Name:      agent.Name,
+				Namespace: agent.Namespace,
+			}, function)).To(Succeed())
+
+			// Clean up
+			Expect(k8sClient.Delete(ctx, agent)).To(Succeed())
+		})
+
+		It("Should throw error when ResponseSource.Pulsar is nil", func() {
+			agent := &asv1alpha1.Agent{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-agent-nil-pulsar",
+					Namespace: "default",
+				},
+				Spec: asv1alpha1.AgentSpec{
+					DisplayName: "Test Agent Nil Pulsar",
+					Description: "A test agent with nil Pulsar in ResponseSource",
+					Instruction: "Test instruction",
+					Model: asv1alpha1.ModelConfig{
+						Model:        "gpt-4",
+						GoogleApiKey: "test-key",
+					},
+					ResponseSource: &fsv1alpha1.SourceSpec{
+						// Pulsar is intentionally nil
+					},
+				},
+			}
+
+			// Create the agent in the database first
+			Expect(k8sClient.Create(ctx, agent)).To(Succeed())
+
+			controllerReconciler := &AgentReconciler{
+				Client: k8sClient,
+				Scheme: k8sClient.Scheme(),
+				Config: Config{
+					PulsarServiceURL: "pulsar://test:6650",
+					PulsarAuthPlugin: "test-plugin",
+					PulsarAuthParams: "test-params",
+				},
+			}
+
+			// Call the public Reconcile method to test the real reconcile logic
+			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      agent.Name,
+					Namespace: agent.Namespace,
+				},
+			})
+			// Should fail with validation error
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("invalid ResponseSource configuration: ResponseSource is set but Pulsar is nil or Topic is empty"))
+
+			// Clean up
+			Expect(k8sClient.Delete(ctx, agent)).To(Succeed())
+		})
+
+		It("Should throw error when ResponseSource.Pulsar.Topic is empty", func() {
+			agent := &asv1alpha1.Agent{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-agent-empty-topic",
+					Namespace: "default",
+				},
+				Spec: asv1alpha1.AgentSpec{
+					DisplayName: "Test Agent Empty Topic",
+					Description: "A test agent with empty topic in ResponseSource",
+					Instruction: "Test instruction",
+					Model: asv1alpha1.ModelConfig{
+						Model:        "gpt-4",
+						GoogleApiKey: "test-key",
+					},
+					ResponseSource: &fsv1alpha1.SourceSpec{
+						Pulsar: &fsv1alpha1.PulsarSourceSpec{
+							Topic: "", // Empty topic
+						},
+					},
+				},
+			}
+
+			// Create the agent in the database first
+			Expect(k8sClient.Create(ctx, agent)).To(Succeed())
+
+			controllerReconciler := &AgentReconciler{
+				Client: k8sClient,
+				Scheme: k8sClient.Scheme(),
+				Config: Config{
+					PulsarServiceURL: "pulsar://test:6650",
+					PulsarAuthPlugin: "test-plugin",
+					PulsarAuthParams: "test-params",
+				},
+			}
+
+			// Call the public Reconcile method to test the real reconcile logic
+			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      agent.Name,
+					Namespace: agent.Namespace,
+				},
+			})
+			// Should fail with validation error
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("invalid ResponseSource configuration: ResponseSource is set but Pulsar is nil or Topic is empty"))
+
+			// Clean up
+			Expect(k8sClient.Delete(ctx, agent)).To(Succeed())
 		})
 
 		It("Should handle agent context building", func() {

@@ -30,3 +30,31 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - fs.functionstream.github.io
+  resources:
+  - functions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - fs.functionstream.github.io
+  resources:
+  - functions/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - fs.functionstream.github.io
+  resources:
+  - packages
+  verbs:
+  - get
+  - list
+  - watch
