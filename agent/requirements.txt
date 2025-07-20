@@ -17,6 +17,7 @@ typing-extensions
 
 # Database dependencies
 asyncpg
+psycopg[binary]
 sqlalchemy[asyncio]
 
 # Testing dependencies
