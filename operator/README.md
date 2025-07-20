@@ -1,10 +1,8 @@
-# operator
-// TODO(user): Add simple overview of use/purpose
+# AgentStream Operator
 
-## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+This operator manages Agent resources in Kubernetes, automatically creating and managing Function resources for each Agent.
 
-## Getting Started
+## Installation
 
 ### Prerequisites
 - go version v1.23.0+
