@@ -3,7 +3,7 @@ import json
 from typing import Dict, Any
 from function_stream import FSFunction, FSContext, FSModule, SourceSpec, PulsarSourceConfig
 from google.adk import Agent, Runner
-from google.adk.sessions import InMemorySessionService
+from google.adk.sessions import DatabaseSessionService
 from google.genai import types
 from google.adk.tools.tool_context import ToolContext
 from fs_function_tool import FSFunctionTool
@@ -49,7 +49,22 @@ class AgentFunction(FSModule):
             auth_plugin=auth_plugin,
             auth_params=auth_params,
         )
-        self.session_service = InMemorySessionService()
+        # Configure database session service if session service config is provided
+        if self.config.sessionService:
+            try:
+                self.session_service = DatabaseSessionService(
+                    database_url=self.config.sessionService.database_url,
+                    pool_size=self.config.sessionService.pool_size,
+                    max_overflow=self.config.sessionService.max_overflow,
+                    ssl_mode=self.config.sessionService.ssl_mode
+                )
+            except Exception as e:
+                raise Exception(f"Failed to initialize database session service: {e}")
+        else:
+            # Fallback to in-memory session service if no database config
+            from google.adk.sessions import InMemorySessionService
+            self.session_service = InMemorySessionService()
+        
         self.runner = None
 
         if self.config.model.googleApiKey:

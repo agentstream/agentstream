@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: agentstream_test_db
+    environment:
+      POSTGRES_DB: test_agentstream
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d test_agentstream"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

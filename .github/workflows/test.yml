@@ -5,6 +5,8 @@ on:
     branches:
       - main
   pull_request:
+    branches:
+      - main
 
 jobs:
   operator-test:
@@ -26,3 +28,37 @@ jobs:
         run: |
           go mod tidy
           make test
+
+  agent-test:
+    name: Run Agent Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Start Docker Compose
+      working-directory: ./agent
+      run: |
+        make start-docker-compose
+    
+    - name: Install dependencies
+      run: |
+        cd agent
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-asyncio
+    
+    - name: Run all tests
+      working-directory: ./agent
+      run: |
+        make test
+
+    - name: Stop Docker Compose
+      working-directory: ./agent
+      run: |
+        make stop-docker-compose
