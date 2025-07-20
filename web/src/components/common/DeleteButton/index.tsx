@@ -2,21 +2,22 @@
 
 import { Module } from '@/common/enum';
 import { Popconfirm } from '@/common/antd';
-import { PropsWithChildren } from 'react';
+import { ReactNode } from 'react';
 
 type Props = {
   type: Module;
   action: () => void;
+  display: ReactNode;
 };
 
-const DeleteButton = (props: PropsWithChildren<Props>) => {
+const DeleteButton = (props: Props) => {
   return (
     <Popconfirm
       title={`Delete this ${props.type}`}
       description={`Are you sure to delete this ${props.type}?`}
       onConfirm={props.action}
     >
-      {props.children}
+      {props.display}
     </Popconfirm>
   );
 };

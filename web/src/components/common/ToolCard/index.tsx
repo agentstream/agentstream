@@ -73,12 +73,16 @@ const ToolCard = (props: Props) => {
         </Typography.Paragraph>
       </Space>
       {[Module.Function, Module.Agent].includes(props.type) ? (
-        <DeleteButton type={props.type} action={handleDelete}>
-          <Icon
-            component={DeleteOutlined}
-            className="text-2xl absolute bottom-2 right-2 hover:cursor-pointer hover:text-blue-lv6!"
-          />
-        </DeleteButton>
+        <DeleteButton
+          type={props.type}
+          action={handleDelete}
+          display={
+            <Icon
+              component={DeleteOutlined}
+              className="text-2xl absolute bottom-2 right-2 hover:cursor-pointer hover:text-blue-lv6!"
+            />
+          }
+        />
       ) : null}
     </Card>
   );

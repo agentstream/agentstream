@@ -28,11 +28,15 @@ const AgentDetail = (props: Props) => {
     <Tabs
       defaultActiveKey="config"
       tabBarExtraContent={
-        <DeleteButton type={Module.Agent} action={handleDelete}>
-          <Button type="primary" disabled={inEditing}>
-            Delete
-          </Button>
-        </DeleteButton>
+        <DeleteButton
+          type={Module.Agent}
+          action={handleDelete}
+          display={
+            <Button type="primary" disabled={inEditing}>
+              Delete
+            </Button>
+          }
+        />
       }
       items={[
         {
