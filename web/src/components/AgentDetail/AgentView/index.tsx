@@ -4,10 +4,15 @@ import { formLayout } from '@/common/constants';
 import { googleAIModels, Module } from '@/common/enum';
 import { parseResourceData } from '@/common/logics';
 import { noticeUnhandledError } from '@/common/utils';
+import EditableViewArrayField from '@/components/common/EditableViewArrayField';
+import EditableViewOptionField from '@/components/common/EditableViewOptionField';
+import EditableViewTextField from '@/components/common/EditableViewTextField';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
+import ViewSubmitButton from '@/components/common/ViewSubmitButton';
+import ViewTextField from '@/components/common/ViewTextField';
 import { useResourceDetails, useResourceList, useUpdateResource } from '@/hooks';
-import { Button, Card, Form, Input, Row, Select, Skeleton, Space, Tag } from 'antd';
-import { useEffect, useState } from 'react';
+import { Card, Form } from 'antd';
+import { useState } from 'react';
 
 type Props = {
   name: string;
@@ -37,13 +42,6 @@ const AgentView = (props: Props) => {
       [`${f.metadata.namespace}/${f.metadata.name}`]: f.spec.displayName
     }))
     .reduce((obj1, obj2) => ({ ...obj1, ...obj2 }), {});
-  const [sources, setSources] = useState(new Array<string>());
-  useEffect(() => {
-    if (!props.inEditing) {
-      setSources(data?.spec.sources.map(source => source.pulsar.topic) ?? []);
-    }
-  }, [props.inEditing, data]);
-  const validSources = sources.filter(source => source !== '');
   function handleCancel() {
     form.resetFields();
     props.setInEditing(false);
@@ -52,7 +50,7 @@ const AgentView = (props: Props) => {
     refetch();
     props.setInEditing(false);
   });
-  async function handleClick() {
+  async function handleSubmit() {
     if (!props.inEditing) {
       props.setInEditing(true);
       return;
@@ -64,7 +62,6 @@ const AgentView = (props: Props) => {
       ...form.getFieldsValue()
     });
   }
-  const name = (data?.spec.displayName || data?.metadata.name) ?? '';
   const modelOptions = googleAIModels.map(value => ({
     value,
     label: value
@@ -94,123 +91,75 @@ const AgentView = (props: Props) => {
         functions: data.spec.tools.map(item => `${item.namespace}/${item.name}`)
       }}
     >
-      <Form.Item label="Name">
-        {isPending ? <Skeleton.Input /> : <Tag color="blue">{name}</Tag>}
-      </Form.Item>
-      <Form.Item label="Description" name="description">
-        {isPending ? (
-          <Skeleton.Input />
-        ) : props.inEditing ? (
-          <Input.TextArea rows={3} />
-        ) : (
-          <Tag color="blue">{data.spec.description}</Tag>
-        )}
-      </Form.Item>
-      <Form.Item label="Model" name="model">
-        {isPending ? (
-          <Skeleton.Input />
-        ) : props.inEditing ? (
-          <Select options={modelOptions} />
-        ) : (
-          <Tag color="blue">{data.spec.model.model}</Tag>
-        )}
-      </Form.Item>
-      <Form.Item label="Google API Key" name="googleApiKey">
-        {isPending ? (
-          <Skeleton.Input />
-        ) : props.inEditing ? (
-          <Input />
-        ) : (
-          <Tag color="blue">{data.spec.model.googleApiKey}</Tag>
-        )}
-      </Form.Item>
-      <Form.Item label="Instructions" name="instruction">
-        {isPending ? (
-          <Skeleton.Input />
-        ) : props.inEditing ? (
-          <Input.TextArea rows={3} />
-        ) : (
-          <Tag color="blue">{data.spec.instruction}</Tag>
-        )}
-      </Form.Item>
-      <Form.Item label="Sources" name="sources">
-        {isPending ? (
-          <Skeleton.Input />
-        ) : props.inEditing ? (
-          <Input
-            placeholder="Please input topic names split by comma."
-            value={sources}
-            onChange={event => setSources(event.target.value.split(','))}
-          />
-        ) : (
-          <Space>
-            {data.spec.sources.map(item => {
-              const {
-                pulsar: { topic }
-              } = item;
-              return (
-                <Tag color="blue" key={topic}>
-                  {topic}
-                </Tag>
-              );
-            })}
-          </Space>
-        )}
-      </Form.Item>
-      {props.inEditing && validSources.length > 0 ? (
-        <Form.Item label=" " colon={false}>
-          {validSources.map(source => (
-            <Tag key={source} color="blue">
-              {source}
-            </Tag>
-          ))}
-        </Form.Item>
-      ) : null}
-      <Form.Item label="Sink" name="sink">
-        {isPending ? (
-          <Skeleton.Input />
-        ) : props.inEditing ? (
-          <Input placeholder="Please input a topic name." />
-        ) : (
-          <Tag color="blue">{data.spec.sink.pulsar.topic}</Tag>
-        )}
-      </Form.Item>
+      <ViewTextField
+        label="Name"
+        value={(data?.spec.displayName || data?.metadata.name) ?? ''}
+        loading={isPending}
+      />
+      <EditableViewTextField
+        name="description"
+        rows={3}
+        loading={isPending}
+        editing={props.inEditing}
+        display={data.spec.description}
+      />
+      <EditableViewOptionField
+        name="model"
+        options={modelOptions}
+        loading={isPending}
+        editing={props.inEditing}
+        display={[data.spec.model.model]}
+      />
+      <EditableViewTextField
+        label="Google API Key"
+        name="googleApiKey"
+        loading={isPending}
+        editing={props.inEditing}
+        display={data.spec.model.googleApiKey}
+      />
+      <EditableViewTextField
+        label="Instructions"
+        name="instruction"
+        rows={3}
+        loading={isPending}
+        editing={props.inEditing}
+        display={data.spec.instruction}
+      />
+      <EditableViewArrayField
+        name="sources"
+        loading={isPending}
+        editing={props.inEditing}
+        placeholder="Please input topic names split by comma."
+        split=","
+        ignore=""
+        display={data.spec.sources.map(item => item.pulsar.topic)}
+      />
+      <EditableViewTextField
+        name="sink"
+        loading={isPending}
+        editing={props.inEditing}
+        placeholder="Please input a topic name."
+        display={data.spec.sink.pulsar.topic}
+      />
       <Form.Item label="Tools" colon={false}>
         <Card>
-          <Form.Item label="Functions" name="functions">
-            {isPending || funcIsPending ? (
-              <Skeleton />
-            ) : props.inEditing ? (
-              <Select
-                options={functionOptions}
-                loading={isPending}
-                value={selectedFunctions}
-                onChange={selectFunction}
-                mode="multiple"
-              />
-            ) : (
-              data.spec.tools.map(f => {
-                const id = `${f.namespace}/${f.name}`;
-                return (
-                  <Tag color="blue" key={id}>
-                    {funcNames[id] ?? id}
-                  </Tag>
-                );
-              })
-            )}
-          </Form.Item>
+          <EditableViewOptionField
+            name="functions"
+            options={functionOptions}
+            loading={isPending || funcIsPending}
+            value={selectedFunctions}
+            onChange={selectFunction}
+            multiple={true}
+            editing={props.inEditing}
+            display={data.spec.tools.map(tool => funcNames[`${tool.namespace}/${tool.name}`])}
+          />
         </Card>
       </Form.Item>
-      <Form.Item label={null}>
-        <Row justify="end">
-          <Space>
-            {props.inEditing ? <Button onClick={handleCancel}>Cancel</Button> : null}
-            <Button type="primary" onClick={handleClick}>
-              {props.inEditing ? 'Save' : 'Edit'}
-            </Button>
-          </Space>
-        </Row>
-      </Form.Item>
+      <ViewSubmitButton
+        editing={props.inEditing}
+        handleCancel={handleCancel}
+        handleSubmit={handleSubmit}
+      />
     </Form>
   );
 };

@@ -2,12 +2,15 @@
 
 import { Module } from '@/common/enum';
 import EmptyPlaceHolder from '@/components/common/EmptyPlaceHolder';
-import { Button, Form, Input, Row, Skeleton, Space, Tag } from 'antd';
-import { formLayout } from '@/common/constants';
-import { useEffect, useState } from 'react';
+import { Card, Form, Input, Skeleton } from 'antd';
+import { configItemPrefix, formLayout } from '@/common/constants';
 import { flattenFunctionConfig } from '@/common/logics';
 import { noticeUnhandledError } from '@/common/utils';
 import { useResourceDetails, useUpdateResource } from '@/hooks';
+import ViewTextField from '@/components/common/ViewTextField';
+import EditableViewTextField from '@/components/common/EditableViewTextField';
+import EditableViewArrayField from '@/components/common/EditableViewArrayField';
+import ViewSubmitButton from '@/components/common/ViewSubmitButton';
 
 type Props = {
   name: string;
@@ -26,22 +29,11 @@ const FunctionView = (props: Props) => {
   noticeUnhandledError(isError, error);
   const config = Object.entries(data?.spec.config ?? {});
   const configIsNotEmpty = config.length > 0;
-  const name = (data?.spec.displayName || data?.metadata.name) ?? '';
   const {
     data: pakData,
     isPending: pakIsPending,
     isError: pakIsError
   } = useResourceDetails(Module.Package, props.namespace, data?.spec.package ?? '');
-  const packageName = pakData?.spec.displayName || pakData?.metadata.name;
-  const moduleName =
-    (pakData?.spec.modules ?? {})[data?.spec.module ?? '']?.displayName ?? data?.spec.module;
-  const [sources, setSources] = useState(new Array<string>());
-  useEffect(() => {
-    if (!props.inEditing) {
-      setSources(data?.spec.sources.map(source => source.pulsar.topic) ?? []);
-    }
-  }, [props.inEditing, data]);
-  const validSources = sources.filter(source => source !== '');
   function handleCancel() {
     form.resetFields();
     props.setInEditing(false);
@@ -50,7 +42,7 @@ const FunctionView = (props: Props) => {
     refetch();
     props.setInEditing(false);
   });
-  async function handleClick() {
+  async function handleSubmit() {
     if (!props.inEditing) {
       props.setInEditing(true);
       return;
@@ -76,96 +68,74 @@ const FunctionView = (props: Props) => {
         ...flattenFunctionConfig(config)
       }}
     >
-      <Form.Item label="Name">
-        {isPending ? <Skeleton.Input /> : <Tag color="blue">{name} </Tag>}
-      </Form.Item>
-      <Form.Item label="Description" name="description">
-        {isPending ? (
-          <Skeleton.Input />
-        ) : props.inEditing ? (
-          <Input.TextArea rows={3} />
-        ) : (
-          <Tag color="blue">{data.spec.description}</Tag>
-        )}
-      </Form.Item>
-      <Form.Item label="Package">
-        {isPending || pakIsPending ? (
-          <Skeleton.Input />
-        ) : (
-          <Tag color={pakIsError ? 'error' : 'blue'}>{packageName}</Tag>
-        )}
-      </Form.Item>
-      <Form.Item label="Module">
-        {isPending ? <Skeleton.Input /> : <Tag color="blue">{moduleName}</Tag>}
-      </Form.Item>
-      <Form.Item label="Sources" name="sources">
-        {isPending ? (
-          <Skeleton.Input />
-        ) : props.inEditing ? (
-          <Input
-            placeholder="Please input topic names split by comma."
-            value={sources}
-            onChange={event => setSources(event.target.value.split(','))}
-          />
-        ) : (
-          <Space>
-            {data.spec.sources.map(item => {
-              const {
-                pulsar: { topic }
-              } = item;
-              return (
-                <Tag color="blue" key={topic}>
-                  {topic}
-                </Tag>
-              );
-            })}
-          </Space>
-        )}
-      </Form.Item>
-      {props.inEditing && validSources.length > 0 ? (
-        <Form.Item label=" " colon={false}>
-          {validSources.map(source => (
-            <Tag key={source} color="blue">
-              {source}
-            </Tag>
-          ))}
-        </Form.Item>
-      ) : null}
-      <Form.Item label="Sink" name="sink">
-        {isPending ? (
-          <Skeleton.Input />
-        ) : props.inEditing ? (
-          <Input placeholder="Please input a topic name." />
-        ) : (
-          <Tag color="blue">{data.spec.sink.pulsar.topic}</Tag>
-        )}
-      </Form.Item>
+      <ViewTextField
+        label="Name"
+        value={(data?.spec.displayName || data?.metadata.name) ?? ''}
+        loading={isPending}
+      />
+      <EditableViewTextField
+        name="description"
+        rows={3}
+        loading={isPending}
+        editing={props.inEditing}
+        display={data.spec.description}
+      />
+      <ViewTextField
+        label="Package"
+        value={(pakData?.spec.displayName || pakData?.metadata.name) ?? ''}
+        loading={isPending || pakIsPending}
+        error={pakIsError}
+      />
+      <ViewTextField
+        label="Module"
+        value={
+          (pakData?.spec.modules ?? {})[data?.spec.module ?? '']?.displayName ?? data?.spec.module
+        }
+        loading={isPending}
+      />
+      <EditableViewArrayField
+        name="sources"
+        loading={isPending}
+        editing={props.inEditing}
+        placeholder="Please input topic names split by comma."
+        split=","
+        ignore=""
+        display={data.spec.sources.map(item => item.pulsar.topic)}
+      />
+      <EditableViewTextField
+        name="sink"
+        loading={isPending}
+        editing={props.inEditing}
+        placeholder="Please input a topic name."
+        display={data.spec.sink.pulsar.topic}
+      />
       {isPending ? (
         <Skeleton />
       ) : (
-        <>
-          <Form.Item label="Configs" colon={false}>
-            {configIsNotEmpty ? null : <Tag>None</Tag>}
-          </Form.Item>
-          {configIsNotEmpty
-            ? config.map(([key, value]) => (
-                <Form.Item label={key} key={key} name={`config.${key}`}>
-                  {props.inEditing ? <Input /> : <Tag color="blue">{value}</Tag>}
-                </Form.Item>
-              ))
-            : null}
-        </>
+        <Form.Item label="Configs" colon={false}>
+          {configIsNotEmpty ? (
+            <Card>
+              {config.map(([key, value]) => (
+                <EditableViewTextField
+                  name={`${configItemPrefix}.${key}`}
+                  label={key}
+                  key={key}
+                  loading={isPending}
+                  editing={props.inEditing}
+                  display={value}
+                />
+              ))}
+            </Card>
+          ) : (
+            <Input value="None" disabled={true} />
+          )}
+        </Form.Item>
       )}
-      <Form.Item label={null}>
-        <Row justify="end">
-          <Space>
-            {props.inEditing ? <Button onClick={handleCancel}>Cancel</Button> : null}
-            <Button type="primary" onClick={handleClick}>
-              {props.inEditing ? 'Save' : 'Edit'}
-            </Button>
-          </Space>
-        </Row>
-      </Form.Item>
+      <ViewSubmitButton
+        editing={props.inEditing}
+        handleCancel={handleCancel}
+        handleSubmit={handleSubmit}
+      />
     </Form>
   );
 };
