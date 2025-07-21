@@ -233,7 +233,7 @@ class TestConfigurableAppNameAndUserId:
             # Verify that the runner was created with the default app_name
             mock_runner.assert_called_once()
             call_args = mock_runner.call_args
-            assert call_args[1]['app_name'] == "summary_agent"  # Default value
+            assert call_args[1]['app_name'] == "default_app"  # Default value
     
     def test_config_model_validation(self):
         """Test that AgentConfig properly validates app_name field"""
