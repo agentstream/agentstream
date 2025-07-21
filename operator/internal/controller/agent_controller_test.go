@@ -18,7 +18,6 @@ package controller
 
 import (
 	"context"
-	"time"
 
 	fsv1alpha1 "github.com/FunctionStream/function-stream/operator/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
@@ -31,9 +30,6 @@ import (
 )
 
 var _ = Describe("Agent Controller", func() {
-	const timeout = time.Second * 30
-	const interval = time.Second * 1
-
 	Context("When reconciling a resource", func() {
 		const resourceName = "test-agent"
 		const namespace = "default"
