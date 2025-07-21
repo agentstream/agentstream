@@ -50,7 +50,7 @@ jobs:
       - name: Lint Helm Chart
         working-directory: ./operator
         run: |
-          helm lint ./dist/chart
+          helm lint ./deploy/chart
 
       - name: Install Helm chart for project
         working-directory: ./operator
