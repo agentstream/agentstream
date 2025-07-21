@@ -15,8 +15,8 @@ pulsar:
 # [AGENT]: Agent configuration options
 agent:
   # Package reference in format "namespace.name" or "name" (defaults to "default" namespace)
-  # Default value uses the Helm chart's namespace
-  package: "{{ .Release.Namespace }}.agent"
+  # Default value uses the Helm chart's namespace and the `agent` as the package name
+  package: ""
   # Module name within the package
   module: "agent"
 

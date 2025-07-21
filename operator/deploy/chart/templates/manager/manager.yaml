@@ -21,7 +21,7 @@ spec:
         control-plane: controller-manager
         {{- if and .Values.controllerManager.pod .Values.controllerManager.pod.labels }}
         {{- range $key, $value := .Values.controllerManager.pod.labels }}
-        {{ $key }}: {{ $value }}
+        {{ $key }}: {{ $value | quote }}
         {{- end }}
         {{- end }}
     spec:
@@ -30,12 +30,6 @@ spec:
           args:
             {{- range .Values.controllerManager.container.args }}
             - {{ . }}
-            {{- end }}
-            {{- if .Values.agent.package }}
-            - --agent-package={{ .Values.agent.package }}
-            {{- end }}
-            {{- if .Values.agent.module }}
-            - --agent-module={{ .Values.agent.module }}
             {{- end }}
           command:
             - /manager
@@ -55,7 +49,10 @@ spec:
             {{- end }}
             {{- if .Values.agent.package }}
             - name: AGENT_PACKAGE
-              value: {{ .Values.agent.package }}
+              value: {{ .Values.agent.package | quote }}
+            {{- else }}
+            - name: AGENT_PACKAGE
+              value: {{ .Release.Namespace }}.agent
             {{- end }}
             {{- if .Values.agent.module }}
             - name: AGENT_MODULE
@@ -64,7 +61,7 @@ spec:
             {{- if .Values.controllerManager.container.env }}
             {{- range $key, $value := .Values.controllerManager.container.env }}
             - name: {{ $key }}
-              value: {{ $value }}
+              value: {{ $value | quote }}
             {{- end }}
             {{- end }}
           livenessProbe:
