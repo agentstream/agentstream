@@ -13,9 +13,6 @@ import _jsonnet
 import os
 from config import AgentConfig
 
-APP_NAME = "summary_agent"
-USER_ID = "user1234"
-
 class AgentFunction(FSModule):
     def __init__(self):
         self.rpc_manager = None
@@ -82,16 +79,20 @@ class AgentFunction(FSModule):
             instruction=self.agent_ctx.instruction + "\nYou MUST use the output_tool to output any messages/output",
             tools=tools,
         )
-        self.runner = Runner(agent=root_agent, app_name=APP_NAME, session_service=self.session_service)
+        self.runner = Runner(agent=root_agent, app_name=self.config.app_name, session_service=self.session_service)
 
     async def process(self, context: FSContext, data: Dict[str, Any]) -> Dict[str, Any] | None:
         input = json.dumps(data, ensure_ascii=False)
         content = types.Content(role='user',
                                 parts=[types.Part(text=input)])
         session_id = str(uuid.uuid4())
-        await self.session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=session_id)
+        
+        # Get user_id from data, fallback to uuid if not present
+        user_id = data.get('__user_id', str(uuid.uuid4()))
+        
+        await self.session_service.create_session(app_name=self.config.app_name, user_id=user_id, session_id=session_id)
         final_response = None
-        agent_event_generator = self.runner.run_async(user_id=USER_ID, session_id=session_id, new_message=content)
+        agent_event_generator = self.runner.run_async(user_id=user_id, session_id=session_id, new_message=content)
         async for event in agent_event_generator:
             if event.is_final_response():
                 final_response = event.content.parts[0].text

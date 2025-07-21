@@ -15,13 +15,11 @@ jobs:
     steps:
       - name: Clone the code
         uses: actions/checkout@v4
-        working-directory: ./operator
 
       - name: Setup Go
         uses: actions/setup-go@v5
-        working-directory: ./operator
         with:
-          go-version-file: go.mod
+          go-version-file: ./operator/go.mod
 
       - name: Running Tests
         working-directory: ./operator
@@ -39,7 +37,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: '3.11'
 
     - name: Start Docker Compose
       working-directory: ./agent
