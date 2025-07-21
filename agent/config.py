@@ -34,3 +34,4 @@ class AgentConfig(BaseModel):
     responseSource: SourceSpec
     model: ModelConfig = ModelConfig()
     sessionService: Optional[SessionServiceConfig] = None
+    app_name: str = "default_app"
