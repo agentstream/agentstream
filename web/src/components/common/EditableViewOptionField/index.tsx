@@ -38,13 +38,17 @@ const EditableViewOptionField = (props: Props) => {
         />
       ) : (
         <Space>
-          {props.display.map(item => {
-            return (
-              <Tag color="blue" key={item}>
-                {item}
-              </Tag>
-            );
-          })}
+          {props.display.length > 0 ? (
+            props.display.map(item => {
+              return (
+                <Tag color="blue" key={item}>
+                  {item}
+                </Tag>
+              );
+            })
+          ) : (
+            <Tag color="grey">None</Tag>
+          )}
         </Space>
       )}
     </Form.Item>
