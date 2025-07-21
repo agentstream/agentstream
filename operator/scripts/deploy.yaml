@@ -581,6 +581,13 @@ spec:
           command:
             - /manager
           image: agentstream/operator:latest
+          env:
+            - name: PULSAR_SERVICE_URL
+              value: pulsar://fs-pulsar-standalone.function-stream.svc.cluster.local:6650
+            - name: AGENT_PACKAGE
+              value: agent-stream.agent
+            - name: AGENT_MODULE
+              value: agent
           livenessProbe:
             httpGet:
               path: /healthz
