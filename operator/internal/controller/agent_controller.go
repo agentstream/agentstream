@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 
 	fsv1alpha1 "github.com/FunctionStream/function-stream/operator/api/v1alpha1"
 	fsutils "github.com/FunctionStream/function-stream/operator/utils"
@@ -44,6 +45,8 @@ type Config struct {
 	PulsarServiceURL string
 	PulsarAuthPlugin string
 	PulsarAuthParams string
+	AgentPackage     string
+	AgentModule      string
 }
 
 // AgentReconciler reconciles a Agent object
@@ -53,8 +56,19 @@ type AgentReconciler struct {
 	Config Config
 }
 
-const agentPackageName = "agent"
-const agentModuleName = "agent"
+// parsePackageRef parses a package reference string in the format "namespace.name" or "name"
+// If no namespace is provided, it defaults to "default"
+func parsePackageRef(pkgRef string) (string, string) {
+	if pkgRef == "" {
+		return "default", "agent"
+	}
+
+	parts := strings.Split(pkgRef, ".")
+	if len(parts) == 1 {
+		return "default", parts[0]
+	}
+	return parts[0], parts[1]
+}
 
 // +kubebuilder:rbac:groups=as.agentstream.github.io,resources=agents,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=as.agentstream.github.io,resources=agents/status,verbs=get;update;patch
@@ -93,6 +107,13 @@ func (r *AgentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		"agent": agent.Name,
 	}
 
+	// Parse package reference
+	pkgNamespace, pkgName := parsePackageRef(r.Config.AgentPackage)
+	moduleName := r.Config.AgentModule
+	if moduleName == "" {
+		moduleName = "agent"
+	}
+
 	function := &fsv1alpha1.Function{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      agent.Name,
@@ -100,10 +121,13 @@ func (r *AgentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			Labels:    labels,
 		},
 		Spec: fsv1alpha1.FunctionSpec{
-			DisplayName:      agent.Spec.DisplayName,
-			Description:      agent.Spec.Description,
-			Package:          agentPackageName,
-			Module:           agentModuleName,
+			DisplayName: agent.Spec.DisplayName,
+			Description: agent.Spec.Description,
+			PackageRef: fsv1alpha1.PackageRef{
+				Name:      pkgName,
+				Namespace: pkgNamespace,
+			},
+			Module:           moduleName,
 			SubscriptionName: agent.Spec.SubscriptionName,
 			Sources:          agent.Spec.Sources,
 			RequestSource:    agent.Spec.RequestSource,
@@ -310,13 +334,17 @@ func (r *AgentReconciler) buildFSFunctionToolContext(ctx context.Context, agent 
 	}
 
 	var p fsv1alpha1.Package
-	if err := r.Get(ctx, types.NamespacedName{Name: f.Spec.Package, Namespace: f.Namespace}, &p); err != nil {
-		return nil, fmt.Errorf("failed to get package %s: %v", f.Spec.Package, err)
+	pkgNamespace := f.Spec.PackageRef.Namespace
+	if pkgNamespace == "" {
+		pkgNamespace = f.Namespace
+	}
+	if err := r.Get(ctx, types.NamespacedName{Name: f.Spec.PackageRef.Name, Namespace: pkgNamespace}, &p); err != nil {
+		return nil, fmt.Errorf("failed to get package %s: %v", f.Spec.PackageRef.Name, err)
 	}
 
 	module, ok := p.Spec.Modules[f.Spec.Module]
 	if !ok {
-		return nil, fmt.Errorf("module %s not found in package %s", f.Spec.Module, f.Spec.Package)
+		return nil, fmt.Errorf("module %s not found in package %s", f.Spec.Module, f.Spec.PackageRef.Name)
 	}
 
 	toolCtx := &FSFunctionToolContext{

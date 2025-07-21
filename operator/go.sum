@@ -1,7 +1,7 @@
 cel.dev/expr v0.18.0 h1:CJ6drgk+Hf96lkLikr4rFf19WrU0BOWEihyZnI2TAzo=
 cel.dev/expr v0.18.0/go.mod h1:MrpN08Q+lEBs+bGYdLxxHkZoUSsCp0nSKTs0nTymJgw=
-github.com/FunctionStream/function-stream/operator v0.0.0-20250622101053-929ca3717ef1 h1:YJ0a9NJhMtC1Xcv0bfcIZ5G9IwQWGa9GwpslavT0KaY=
-github.com/FunctionStream/function-stream/operator v0.0.0-20250622101053-929ca3717ef1/go.mod h1:i3exKXYIuJvGgtGa7wn0O9ULD8lxlkBAbIfOgBqzHOQ=
+github.com/FunctionStream/function-stream/operator v0.0.0-20250720145025-985bd76f2566 h1:O6WOHkwEo42wIhXjNCrvuASFpqJ6R7HkgqPH9kJn/N0=
+github.com/FunctionStream/function-stream/operator v0.0.0-20250720145025-985bd76f2566/go.mod h1:QciXuUhHeGeqfWch6imvth3HpJJxKLVjG/6CQuWXBmk=
 github.com/antlr4-go/antlr/v4 v4.13.0 h1:lxCg3LAv+EUK6t1i0y1V6/SLeUi0eKEKdhQAlS8TVTI=
 github.com/antlr4-go/antlr/v4 v4.13.0/go.mod h1:pfChB/xh/Unjila75QW7+VU4TSnWnnk9UTnmpPaOR2g=
 github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535 h1:4daAzAu0S6Vi7/lbWECcX0j45yZReDZ56BQsrVBOEEY=

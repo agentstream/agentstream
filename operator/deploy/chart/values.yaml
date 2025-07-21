@@ -12,6 +12,14 @@ pulsar:
   # Authentication parameters for Pulsar (e.g., "tlsCertFile:/path/to/cert.pem,tlsKeyFile:/path/to/key.pem")
   authParams: ""
 
+# [AGENT]: Agent configuration options
+agent:
+  # Package reference in format "namespace.name" or "name" (defaults to "default" namespace)
+  # Default value uses the Helm chart's namespace
+  package: "{{ .Release.Namespace }}.agent"
+  # Module name within the package
+  module: "agent"
+
 # [MANAGER]: Manager Deployment Configurations
 controllerManager:
   replicas: 1
