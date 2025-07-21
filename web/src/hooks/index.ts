@@ -11,7 +11,7 @@ import {
     CreateForm,
     ResourceData,
     SpecMap,
-    Tool,
+    KubernetesCustomResource,
     UpdateForm
 } from '@/common/types';
 import { canChange, noticeUnhandledError } from '@/common/utils';
@@ -59,7 +59,7 @@ export function useCreateResource(module: ChangableModule, callback?: () => void
 
 export function useDeleteResource(module: Module, callback?: () => void) {
     return useMutation({
-        mutationFn: (r: Tool) => {
+        mutationFn: (r: KubernetesCustomResource) => {
             if (!canChange(module)) {
                 return new Promise<false>(() => false);
             }

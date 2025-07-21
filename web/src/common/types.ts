@@ -41,7 +41,7 @@ export type PackageSpec = BaseSpec & {
 };
 
 export type FunctionSpec = FunctionLikeSpec & {
-    package: string;
+    packageRef: KubernetesCustomResource;
     module: string;
     config: Record<string, string>;
 };
@@ -61,7 +61,7 @@ export type MessageChannel = {
 export type AgentSpec = FunctionLikeSpec & {
     instruction: string;
     model: Model;
-    tools: Tool[];
+    tools: KubernetesCustomResource[];
 };
 
 type Model = {
@@ -69,7 +69,7 @@ type Model = {
     model: string;
 };
 
-export type Tool = {
+export type KubernetesCustomResource = {
     name: string;
     namespace: string;
 };

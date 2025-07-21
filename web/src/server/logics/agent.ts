@@ -7,7 +7,7 @@ import {
     ResourceData,
     ResourceID,
     ResourceList,
-    Tool,
+    KubernetesCustomResource,
     UpdateAgentForm
 } from '@/common/types';
 import { client } from '../infra/k8s';
@@ -144,7 +144,7 @@ export async function updateAgent(form: UpdateAgentForm): Promise<AgentStreamApi
     }
 }
 
-function buildTools(tools: ResourceID[]): Tool[] {
+function buildTools(tools: ResourceID[]): KubernetesCustomResource[] {
     return (tools ?? []).map(tool => {
         const [namespace, name] = tool.split('/');
         return { namespace, name };

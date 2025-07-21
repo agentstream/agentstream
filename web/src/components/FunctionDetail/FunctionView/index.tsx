@@ -33,7 +33,7 @@ const FunctionView = (props: Props) => {
     data: pakData,
     isPending: pakIsPending,
     isError: pakIsError
-  } = useResourceDetails(Module.Package, props.namespace, data?.spec.package ?? '');
+  } = useResourceDetails(Module.Package, props.namespace, data?.spec.packageRef?.name ?? '');
   function handleCancel() {
     form.resetFields();
     props.setInEditing(false);

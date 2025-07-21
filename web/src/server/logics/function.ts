@@ -56,7 +56,10 @@ export async function createFunction(form: CreateFunctionForm) {
             description: description ?? '',
             displayName: name,
             module,
-            package: packageName,
+            packageRef: {
+                name: packageName,
+                namespace
+            },
             sources: buildSources(sources),
             sink: buildSink(sink),
             config: extractConfigs(form)
@@ -112,7 +115,7 @@ export async function updateFunction(form: UpdateFunctionForm) {
     }
     const {
         metadata: { resourceVersion },
-        spec: { package: pak, module }
+        spec: { packageRef, module }
     } = query.data as ResourceData<FunctionSpec>;
     const { group, version } = FunctionConfig;
     const body = {
@@ -127,7 +130,7 @@ export async function updateFunction(form: UpdateFunctionForm) {
             description: description ?? '',
             displayName: name,
             module,
-            package: pak,
+            packageRef,
             sources: buildSources(sources),
             sink: buildSink(sink),
             config: extractConfigs(form)
