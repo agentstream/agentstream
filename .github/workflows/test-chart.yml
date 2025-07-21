@@ -52,6 +52,11 @@ jobs:
         run: |
           helm lint ./deploy/chart
 
+      - name: Install required CRDs from fs.yaml
+        working-directory: ./operator
+        run: |
+          kubectl apply -f scripts/fs.yaml
+
       - name: Install Helm chart for project
         working-directory: ./operator
         run: |
@@ -73,6 +78,7 @@ jobs:
           
           # Check if CRDs are installed
           kubectl get crd | grep agentstream
+          kubectl get crd | grep functionstream
           
           # Check operator logs for any errors
           kubectl logs -n operator-system deployment/operator-controller-manager --tail=50 
