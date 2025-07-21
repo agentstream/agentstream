@@ -55,7 +55,7 @@ jobs:
       - name: Install Helm chart for project
         working-directory: ./operator
         run: |
-          helm install my-release ./dist/chart --create-namespace --namespace operator-system
+          helm install my-release ./deploy/chart --create-namespace --namespace operator-system
 
       - name: Check Helm release status
         working-directory: ./operator
