@@ -15,7 +15,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: go.mod
+          go-version-file: operator/go.mod
 
       - name: Install the latest version of kind
         run: |
@@ -30,6 +30,7 @@ jobs:
         run: kind create cluster
 
       - name: Prepare operator
+        working-directory: ./operator
         run: |
           go mod tidy
           make docker-build IMG=operator:v0.1.0
@@ -43,18 +44,22 @@ jobs:
         run: helm version
 
       - name: Generate deploy YAML for validation
+        working-directory: ./operator
         run: |
           make generate-deploy-yaml
 
       - name: Lint Helm Chart
+        working-directory: ./operator
         run: |
           helm lint ./dist/chart
 
       - name: Install Helm chart for project
+        working-directory: ./operator
         run: |
           helm install my-release ./dist/chart --create-namespace --namespace operator-system
 
       - name: Check Helm release status
+        working-directory: ./operator
         run: |
           helm status my-release --namespace operator-system
 
