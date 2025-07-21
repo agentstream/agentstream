@@ -71,4 +71,4 @@ jobs:
           kubectl get crd | grep agentstream
           
           # Check operator logs for any errors
-          kubectl logs -n operator-system deployment/operator-controller-manager --tail=50
+          kubectl logs -n operator-system deployment/operator-controller-manager --tail=50 
