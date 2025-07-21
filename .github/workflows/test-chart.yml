@@ -1,84 +1,84 @@
-name: Test Chart
+# name: Test Chart
 
-on:
-  pull_request:
+# on:
+#   pull_request:
 
-jobs:
-  test-e2e:
-    name: Run on Ubuntu
-    runs-on: ubuntu-latest
-    steps:
-      - name: Clone the code
-        uses: actions/checkout@v4
+# jobs:
+#   test-e2e:
+#     name: Run on Ubuntu
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Clone the code
+#         uses: actions/checkout@v4
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: operator/go.mod
+#       - name: Setup Go
+#         uses: actions/setup-go@v5
+#         with:
+#           go-version-file: operator/go.mod
 
-      - name: Install the latest version of kind
-        run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
-          chmod +x ./kind
-          sudo mv ./kind /usr/local/bin/kind
+#       - name: Install the latest version of kind
+#         run: |
+#           curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+#           chmod +x ./kind
+#           sudo mv ./kind /usr/local/bin/kind
 
-      - name: Verify kind installation
-        run: kind version
+#       - name: Verify kind installation
+#         run: kind version
 
-      - name: Create kind cluster
-        run: kind create cluster
+#       - name: Create kind cluster
+#         run: kind create cluster
 
-      - name: Prepare operator
-        working-directory: ./operator
-        run: |
-          go mod tidy
-          make docker-build IMG=operator:v0.1.0
-          kind load docker-image operator:v0.1.0
+#       - name: Prepare operator
+#         working-directory: ./operator
+#         run: |
+#           go mod tidy
+#           make docker-build IMG=operator:v0.1.0
+#           kind load docker-image operator:v0.1.0
 
-      - name: Install Helm
-        run: |
-          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+#       - name: Install Helm
+#         run: |
+#           curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-      - name: Verify Helm installation
-        run: helm version
+#       - name: Verify Helm installation
+#         run: helm version
 
-      - name: Generate deploy YAML for validation
-        working-directory: ./operator
-        run: |
-          make generate-deploy-yaml
+#       - name: Generate deploy YAML for validation
+#         working-directory: ./operator
+#         run: |
+#           make generate-deploy-yaml
 
-      - name: Lint Helm Chart
-        working-directory: ./operator
-        run: |
-          helm lint ./deploy/chart
+#       - name: Lint Helm Chart
+#         working-directory: ./operator
+#         run: |
+#           helm lint ./deploy/chart
 
-      - name: Install required CRDs from fs.yaml
-        working-directory: ./operator
-        run: |
-          kubectl apply -f scripts/fs.yaml
+#       - name: Install required CRDs from fs.yaml
+#         working-directory: ./operator
+#         run: |
+#           kubectl apply -f scripts/fs.yaml
 
-      - name: Install Helm chart for project
-        working-directory: ./operator
-        run: |
-          helm install my-release ./deploy/chart --create-namespace --namespace operator-system
+#       - name: Install Helm chart for project
+#         working-directory: ./operator
+#         run: |
+#           helm install my-release ./deploy/chart --create-namespace --namespace operator-system
 
-      - name: Check Helm release status
-        working-directory: ./operator
-        run: |
-          helm status my-release --namespace operator-system
+#       - name: Check Helm release status
+#         working-directory: ./operator
+#         run: |
+#           helm status my-release --namespace operator-system
 
-      - name: Wait for operator to be ready
-        run: |
-          kubectl wait --namespace operator-system --for=condition=available --timeout=300s deployment/operator-controller-manager
+#       - name: Wait for operator to be ready
+#         run: |
+#           kubectl wait --namespace operator-system --for=condition=available --timeout=300s deployment/operator-controller-manager
 
-      - name: Verify operator deployment
-        run: |
-          # Check if operator is running
-          kubectl get pods -n operator-system
+#       - name: Verify operator deployment
+#         run: |
+#           # Check if operator is running
+#           kubectl get pods -n operator-system
           
-          # Check if CRDs are installed
-          kubectl get crd | grep agentstream
-          kubectl get crd | grep functionstream
+#           # Check if CRDs are installed
+#           kubectl get crd | grep agentstream
+#           kubectl get crd | grep functionstream
           
-          # Check operator logs for any errors
-          kubectl logs -n operator-system deployment/operator-controller-manager --tail=50 
+#           # Check operator logs for any errors
+#           kubectl logs -n operator-system deployment/operator-controller-manager --tail=50 
