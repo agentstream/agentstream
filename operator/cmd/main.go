@@ -68,6 +68,8 @@ func main() {
 	var pulsarServiceUrl string
 	var pulsarAuthPlugin string
 	var pulsarAuthParams string
+	var agentPackage string
+	var agentModule string
 	var tlsOpts []func(*tls.Config)
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
@@ -90,6 +92,8 @@ func main() {
 	flag.StringVar(&pulsarServiceUrl, "pulsar-service-url", os.Getenv("PULSAR_SERVICE_URL"), "Pulsar service URL")
 	flag.StringVar(&pulsarAuthPlugin, "pulsar-auth-plugin", os.Getenv("PULSAR_AUTH_PLUGIN"), "Pulsar auth plugin")
 	flag.StringVar(&pulsarAuthParams, "pulsar-auth-params", os.Getenv("PULSAR_AUTH_PARAMS"), "Pulsar auth params")
+	flag.StringVar(&agentPackage, "agent-package", os.Getenv("AGENT_PACKAGE"), "Agent package name")
+	flag.StringVar(&agentModule, "agent-module", os.Getenv("AGENT_MODULE"), "Agent module name")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -100,6 +104,8 @@ func main() {
 		PulsarServiceURL: pulsarServiceUrl,
 		PulsarAuthPlugin: pulsarAuthPlugin,
 		PulsarAuthParams: pulsarAuthParams,
+		AgentPackage:     agentPackage,
+		AgentModule:      agentModule,
 	}
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))

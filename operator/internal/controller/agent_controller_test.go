@@ -559,5 +559,302 @@ var _ = Describe("Agent Controller", func() {
 			Expect(agentCtx.PostProcess).NotTo(BeNil())
 			Expect(agentCtx.PostProcess.Jsonnet).To(Equal("test-jsonnet"))
 		})
+
+		It("Should handle agent with default package configuration", func() {
+			By("Creating an agent with default package configuration")
+			agent := &asv1alpha1.Agent{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-agent-default-pkg",
+					Namespace: "default",
+				},
+				Spec: asv1alpha1.AgentSpec{
+					DisplayName: "Test Agent Default Package",
+					Description: "A test agent with default package configuration",
+					Instruction: "Test instruction",
+					Model: asv1alpha1.ModelConfig{
+						Model: "gpt-4",
+					},
+				},
+			}
+			Expect(k8sClient.Create(ctx, agent)).To(Succeed())
+
+			By("Reconciling with default package configuration")
+			controllerReconciler := &AgentReconciler{
+				Client: k8sClient,
+				Scheme: k8sClient.Scheme(),
+				Config: Config{
+					PulsarServiceURL: "pulsar://localhost:6650",
+					PulsarAuthPlugin: "",
+					PulsarAuthParams: "",
+					AgentPackage:     "",
+					AgentModule:      "",
+				},
+			}
+
+			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      agent.Name,
+					Namespace: agent.Namespace,
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify that the Function was created with default package configuration
+			function := &fsv1alpha1.Function{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Name:      agent.Name,
+				Namespace: agent.Namespace,
+			}, function)).To(Succeed())
+			Expect(function.Spec.PackageRef.Name).To(Equal("agent"))
+			Expect(function.Spec.PackageRef.Namespace).To(Equal("default"))
+			Expect(function.Spec.Module).To(Equal("agent"))
+
+			// Clean up
+			Expect(k8sClient.Delete(ctx, agent)).To(Succeed())
+		})
+
+		It("Should handle agent with custom package configuration", func() {
+			By("Creating an agent with custom package configuration")
+			agent := &asv1alpha1.Agent{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-agent-custom-pkg",
+					Namespace: "default",
+				},
+				Spec: asv1alpha1.AgentSpec{
+					DisplayName: "Test Agent Custom Package",
+					Description: "A test agent with custom package configuration",
+					Instruction: "Test instruction",
+					Model: asv1alpha1.ModelConfig{
+						Model: "gpt-4",
+					},
+				},
+			}
+			Expect(k8sClient.Create(ctx, agent)).To(Succeed())
+
+			By("Reconciling with custom package configuration")
+			controllerReconciler := &AgentReconciler{
+				Client: k8sClient,
+				Scheme: k8sClient.Scheme(),
+				Config: Config{
+					PulsarServiceURL: "pulsar://localhost:6650",
+					PulsarAuthPlugin: "",
+					PulsarAuthParams: "",
+					AgentPackage:     "my-namespace.my-agent-package",
+					AgentModule:      "custom-module",
+				},
+			}
+
+			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      agent.Name,
+					Namespace: agent.Namespace,
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify that the Function was created with custom package configuration
+			function := &fsv1alpha1.Function{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Name:      agent.Name,
+				Namespace: agent.Namespace,
+			}, function)).To(Succeed())
+			Expect(function.Spec.PackageRef.Name).To(Equal("my-agent-package"))
+			Expect(function.Spec.PackageRef.Namespace).To(Equal("my-namespace"))
+			Expect(function.Spec.Module).To(Equal("custom-module"))
+
+			// Clean up
+			Expect(k8sClient.Delete(ctx, agent)).To(Succeed())
+		})
+
+		It("Should handle agent with package name only configuration", func() {
+			By("Creating an agent with package name only configuration")
+			agent := &asv1alpha1.Agent{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-agent-pkg-name-only",
+					Namespace: "default",
+				},
+				Spec: asv1alpha1.AgentSpec{
+					DisplayName: "Test Agent Package Name Only",
+					Description: "A test agent with package name only configuration",
+					Instruction: "Test instruction",
+					Model: asv1alpha1.ModelConfig{
+						Model: "gpt-4",
+					},
+				},
+			}
+			Expect(k8sClient.Create(ctx, agent)).To(Succeed())
+
+			By("Reconciling with package name only configuration")
+			controllerReconciler := &AgentReconciler{
+				Client: k8sClient,
+				Scheme: k8sClient.Scheme(),
+				Config: Config{
+					PulsarServiceURL: "pulsar://localhost:6650",
+					PulsarAuthPlugin: "",
+					PulsarAuthParams: "",
+					AgentPackage:     "my-agent-package",
+					AgentModule:      "agent",
+				},
+			}
+
+			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      agent.Name,
+					Namespace: agent.Namespace,
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify that the Function was created with package name only configuration
+			function := &fsv1alpha1.Function{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Name:      agent.Name,
+				Namespace: agent.Namespace,
+			}, function)).To(Succeed())
+			Expect(function.Spec.PackageRef.Name).To(Equal("my-agent-package"))
+			Expect(function.Spec.PackageRef.Namespace).To(Equal("default"))
+			Expect(function.Spec.Module).To(Equal("agent"))
+
+			// Clean up
+			Expect(k8sClient.Delete(ctx, agent)).To(Succeed())
+		})
+
+		It("Should handle agent with empty module configuration", func() {
+			By("Creating an agent with empty module configuration")
+			agent := &asv1alpha1.Agent{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-agent-empty-module",
+					Namespace: "default",
+				},
+				Spec: asv1alpha1.AgentSpec{
+					DisplayName: "Test Agent Empty Module",
+					Description: "A test agent with empty module configuration",
+					Instruction: "Test instruction",
+					Model: asv1alpha1.ModelConfig{
+						Model: "gpt-4",
+					},
+				},
+			}
+			Expect(k8sClient.Create(ctx, agent)).To(Succeed())
+
+			By("Reconciling with empty module configuration")
+			controllerReconciler := &AgentReconciler{
+				Client: k8sClient,
+				Scheme: k8sClient.Scheme(),
+				Config: Config{
+					PulsarServiceURL: "pulsar://localhost:6650",
+					PulsarAuthPlugin: "",
+					PulsarAuthParams: "",
+					AgentPackage:     "my-namespace.my-agent-package",
+					AgentModule:      "", // Empty module should default to "agent"
+				},
+			}
+
+			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      agent.Name,
+					Namespace: agent.Namespace,
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify that the Function was created with default module
+			function := &fsv1alpha1.Function{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Name:      agent.Name,
+				Namespace: agent.Namespace,
+			}, function)).To(Succeed())
+			Expect(function.Spec.PackageRef.Name).To(Equal("my-agent-package"))
+			Expect(function.Spec.PackageRef.Namespace).To(Equal("my-namespace"))
+			Expect(function.Spec.Module).To(Equal("agent")) // Should default to "agent"
+
+			// Clean up
+			Expect(k8sClient.Delete(ctx, agent)).To(Succeed())
+		})
+	})
+
+	Context("Package reference parsing", func() {
+		It("Should parse package references correctly", func() {
+			// Test the parsePackageRef function directly
+			ns, name := parsePackageRef("")
+			Expect(ns).To(Equal("default"))
+			Expect(name).To(Equal("agent"))
+
+			ns, name = parsePackageRef("my-package")
+			Expect(ns).To(Equal("default"))
+			Expect(name).To(Equal("my-package"))
+
+			ns, name = parsePackageRef("my-namespace.my-package")
+			Expect(ns).To(Equal("my-namespace"))
+			Expect(name).To(Equal("my-package"))
+
+			ns, name = parsePackageRef("functionstream.agent-package")
+			Expect(ns).To(Equal("functionstream"))
+			Expect(name).To(Equal("agent-package"))
+		})
+	})
+
+	Context("Configuration integration", func() {
+		It("Should integrate package and module configuration correctly", func() {
+			agent := &asv1alpha1.Agent{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-agent-integration",
+					Namespace: "default",
+				},
+				Spec: asv1alpha1.AgentSpec{
+					DisplayName: "Test Agent Integration",
+					Description: "A test agent for integration testing",
+					Instruction: "Test instruction",
+					Model: asv1alpha1.ModelConfig{
+						Model: "gpt-4",
+					},
+					ResponseSource: &fsv1alpha1.SourceSpec{
+						Pulsar: &fsv1alpha1.PulsarSourceSpec{
+							Topic: "response-topic",
+						},
+					},
+				},
+			}
+			Expect(k8sClient.Create(ctx, agent)).To(Succeed())
+
+			controllerReconciler := &AgentReconciler{
+				Client: k8sClient,
+				Scheme: k8sClient.Scheme(),
+				Config: Config{
+					PulsarServiceURL: "pulsar://localhost:6650",
+					PulsarAuthPlugin: "",
+					PulsarAuthParams: "",
+					AgentPackage:     "test-namespace.test-package",
+					AgentModule:      "test-module",
+				},
+			}
+
+			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      agent.Name,
+					Namespace: agent.Namespace,
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify the complete integration
+			function := &fsv1alpha1.Function{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Name:      agent.Name,
+				Namespace: agent.Namespace,
+			}, function)).To(Succeed())
+
+			// Check package reference
+			Expect(function.Spec.PackageRef.Name).To(Equal("test-package"))
+			Expect(function.Spec.PackageRef.Namespace).To(Equal("test-namespace"))
+			Expect(function.Spec.Module).To(Equal("test-module"))
+
+			// Check other fields are preserved
+			Expect(function.Spec.DisplayName).To(Equal("Test Agent Integration"))
+			Expect(function.Spec.Description).To(Equal("A test agent for integration testing"))
+
+			// Clean up
+			Expect(k8sClient.Delete(ctx, agent)).To(Succeed())
+		})
 	})
 })

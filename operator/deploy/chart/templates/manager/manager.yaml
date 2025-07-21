@@ -31,6 +31,12 @@ spec:
             {{- range .Values.controllerManager.container.args }}
             - {{ . }}
             {{- end }}
+            {{- if .Values.agent.package }}
+            - --agent-package={{ .Values.agent.package }}
+            {{- end }}
+            {{- if .Values.agent.module }}
+            - --agent-module={{ .Values.agent.module }}
+            {{- end }}
           command:
             - /manager
           image: {{ .Values.controllerManager.container.image.repository }}:{{ .Values.controllerManager.container.image.tag }}
@@ -46,6 +52,14 @@ spec:
             {{- if .Values.pulsar.authParams }}
             - name: PULSAR_AUTH_PARAMS
               value: {{ .Values.pulsar.authParams }}
+            {{- end }}
+            {{- if .Values.agent.package }}
+            - name: AGENT_PACKAGE
+              value: {{ .Values.agent.package }}
+            {{- end }}
+            {{- if .Values.agent.module }}
+            - name: AGENT_MODULE
+              value: {{ .Values.agent.module }}
             {{- end }}
             {{- if .Values.controllerManager.container.env }}
             {{- range $key, $value := .Values.controllerManager.container.env }}
