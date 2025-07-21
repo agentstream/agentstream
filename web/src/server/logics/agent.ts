@@ -36,6 +36,7 @@ export async function getAgentDetails(namespace: string, name: string) {
             namespace,
             name
         })) as ResourceData<AgentSpec>;
+        resp.spec.tools ??= [];
         return buildQueryResponse(resp);
     } catch (err) {
         return buildErrorResponse(err);
