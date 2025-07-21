@@ -10,11 +10,9 @@ export type ResourceData<T extends Specs | unknown> = {
 };
 
 export type Metadata = {
-    name: string;
-    namespace: string;
     uid: string;
     resourceVersion: string;
-};
+} & KubernetesCustomResource;
 
 type BaseSpec = {
     description: string;
@@ -146,10 +144,7 @@ type FunctionEditableFields = {
     sink: string;
 } & FunctionConfigs;
 
-export type UpdateFunctionForm = {
-    name: string;
-    namespace: string;
-} & FunctionEditableFields;
+export type UpdateFunctionForm = KubernetesCustomResource & FunctionEditableFields;
 
 export type CreateAgentForm = {
     name: string;
@@ -162,9 +157,7 @@ export type CreateAgentForm = {
     sink: string;
 };
 
-export type UpdateAgentForm = {
-    namespace: string;
-} & CreateAgentForm;
+export type UpdateAgentForm = KubernetesCustomResource & CreateAgentForm;
 
 export type ResourceID = `${string}/${string}`;
 
