@@ -13,12 +13,11 @@ jobs:
 
       - name: Setup Go
         uses: actions/setup-go@v5
-        working-directory: ./operator
         with:
-          go-version-file: go.mod
+          go-version-file: ./operator/go.mod
 
       - name: Run Operator linter
         uses: golangci/golangci-lint-action@v6
-        working-directory: ./operator
         with:
           version: v1.63.4
+          working-directory: ./operator
