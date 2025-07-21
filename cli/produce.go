@@ -31,20 +31,25 @@ Examples:
   ascli produce --topic my-topic --json '{"key": "value"}'
   ascli produce --topic my-topic --json - --num 5  # Read JSON from stdin
   ascli produce --topic my-topic --json '{"key": "value"}' --request
-  ascli produce --topic my-topic --json '{"key": "value"}' --auth-plugin org.apache.pulsar.client.impl.auth.AuthenticationTls --auth-params '{"tlsCertFile": "/path/to/cert.pem", "tlsKeyFile": "/path/to/key.pem"}'`,
+  ascli produce --topic my-topic --json '{"key": "value"}' --auth-plugin org.apache.pulsar.client.impl.auth.AuthenticationTls --auth-params '{"tlsCertFile": "/path/to/cert.pem", "tlsKeyFile": "/path/to/key.pem"}'
+  
+Context support:
+  ascli context create local --pulsar-url pulsar://localhost:6650
+  ascli context use local
+  ascli produce --topic my-topic --json '{"key": "value"}'  # Uses context configuration`,
 	RunE: runProduce,
 }
 
 func init() {
 	rootCmd.AddCommand(produceCmd)
 
-	produceCmd.Flags().StringVar(&pulsarURL, "pulsar-url", "pulsar://localhost:6650", "Service URL")
+	produceCmd.Flags().StringVar(&pulsarURL, "pulsar-url", "", "Service URL (overrides context)")
 	produceCmd.Flags().StringVar(&topic, "topic", "", "Topic to produce to (required)")
 	produceCmd.Flags().StringVar(&jsonData, "json", "", "JSON string to send, or '-' to read from stdin (required)")
 	produceCmd.Flags().IntVar(&num, "num", 1, "Number of messages to produce")
 	produceCmd.Flags().BoolVar(&request, "request", false, "Send as a request message")
-	produceCmd.Flags().StringVar(&authPlugin, "auth-plugin", "", "Authentication plugin class name")
-	produceCmd.Flags().StringVar(&authParams, "auth-params", "", "Authentication parameters (JSON string)")
+	produceCmd.Flags().StringVar(&authPlugin, "auth-plugin", "", "Authentication plugin class name (overrides context)")
+	produceCmd.Flags().StringVar(&authParams, "auth-params", "", "Authentication parameters (JSON string) (overrides context)")
 
 	produceCmd.MarkFlagRequired("topic")
 	produceCmd.MarkFlagRequired("json")
@@ -74,8 +79,14 @@ func runProduce(cmd *cobra.Command, args []string) error {
 		messageStr = jsonData
 	}
 
+	// Get configuration from context or command line
+	url, authPlugin, authParams, err := getContextConfig(pulsarURL, authPlugin, authParams)
+	if err != nil {
+		return fmt.Errorf("failed to get context configuration: %v", err)
+	}
+
 	// Create client
-	clientOpts, err := buildClientOptions(pulsarURL, authPlugin, authParams)
+	clientOpts, err := buildClientOptions(url, authPlugin, authParams)
 	if err != nil {
 		return fmt.Errorf("failed to build client options: %v", err)
 	}

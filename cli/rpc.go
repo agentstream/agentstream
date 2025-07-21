@@ -30,19 +30,24 @@ var rpcCmd = &cobra.Command{
 Examples:
   ascli rpc --topic my-topic --json '{"key": "value"}'
   ascli rpc --topic my-topic --json -  # Read JSON from stdin
-  ascli rpc --topic my-topic --json '{"key": "value"}' --auth-plugin org.apache.pulsar.client.impl.auth.AuthenticationTls --auth-params '{"tlsCertFile": "/path/to/cert.pem", "tlsKeyFile": "/path/to/key.pem"}'`,
+  ascli rpc --topic my-topic --json '{"key": "value"}' --auth-plugin org.apache.pulsar.client.impl.auth.AuthenticationTls --auth-params '{"tlsCertFile": "/path/to/cert.pem", "tlsKeyFile": "/path/to/key.pem"}'
+  
+Context support:
+  ascli context create local --pulsar-url pulsar://localhost:6650
+  ascli context use local
+  ascli rpc --topic my-topic --json '{"key": "value"}'  # Uses context configuration`,
 	RunE: runRPC,
 }
 
 func init() {
 	rootCmd.AddCommand(rpcCmd)
 
-	rpcCmd.Flags().StringVar(&rpcPulsarURL, "pulsar-url", "pulsar://localhost:6650", "Service URL")
+	rpcCmd.Flags().StringVar(&rpcPulsarURL, "pulsar-url", "", "Service URL (overrides context)")
 	rpcCmd.Flags().StringVar(&rpcTopic, "topic", "", "Topic to send request to (required)")
 	rpcCmd.Flags().StringVar(&rpcJSON, "json", "", "JSON string to send, or '-' to read from stdin (required)")
 	rpcCmd.Flags().StringVar(&responseTopic, "response-topic", "", "Response topic (auto-generated if not specified)")
-	rpcCmd.Flags().StringVar(&rpcAuthPlugin, "auth-plugin", "", "Authentication plugin class name")
-	rpcCmd.Flags().StringVar(&rpcAuthParams, "auth-params", "", "Authentication parameters (JSON string)")
+	rpcCmd.Flags().StringVar(&rpcAuthPlugin, "auth-plugin", "", "Authentication plugin class name (overrides context)")
+	rpcCmd.Flags().StringVar(&rpcAuthParams, "auth-params", "", "Authentication parameters (JSON string) (overrides context)")
 
 	rpcCmd.MarkFlagRequired("topic")
 	rpcCmd.MarkFlagRequired("json")
@@ -77,8 +82,14 @@ func runRPC(cmd *cobra.Command, args []string) error {
 		responseTopic = fmt.Sprintf("non-persistent://public/default/response-%s", uuid.New().String())
 	}
 
+	// Get configuration from context or command line
+	url, authPlugin, authParams, err := getContextConfig(rpcPulsarURL, rpcAuthPlugin, rpcAuthParams)
+	if err != nil {
+		return fmt.Errorf("failed to get context configuration: %v", err)
+	}
+
 	// Create client
-	clientOpts, err := buildClientOptions(rpcPulsarURL, rpcAuthPlugin, rpcAuthParams)
+	clientOpts, err := buildClientOptions(url, authPlugin, authParams)
 	if err != nil {
 		return fmt.Errorf("failed to build client options: %v", err)
 	}

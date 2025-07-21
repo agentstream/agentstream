@@ -28,19 +28,24 @@ Examples:
   ascli read --topic my-topic
   ascli read --topic my-topic --seek-time "2024-01-01 12:00:00"
   ascli read --topic my-topic --num 20
-  ascli read --topic my-topic --auth-plugin org.apache.pulsar.client.impl.auth.AuthenticationTls --auth-params '{"tlsCertFile": "/path/to/cert.pem", "tlsKeyFile": "/path/to/key.pem"}'`,
+  ascli read --topic my-topic --auth-plugin org.apache.pulsar.client.impl.auth.AuthenticationTls --auth-params '{"tlsCertFile": "/path/to/cert.pem", "tlsKeyFile": "/path/to/key.pem"}'
+  
+Context support:
+  ascli context create local --pulsar-url pulsar://localhost:6650
+  ascli context use local
+  ascli read --topic my-topic  # Uses context configuration`,
 	RunE: runRead,
 }
 
 func init() {
 	rootCmd.AddCommand(readCmd)
 
-	readCmd.Flags().StringVar(&readPulsarURL, "pulsar-url", "pulsar://localhost:6650", "Service URL")
+	readCmd.Flags().StringVar(&readPulsarURL, "pulsar-url", "", "Service URL (overrides context)")
 	readCmd.Flags().StringVar(&readTopic, "topic", "", "Topic to read from (required)")
 	readCmd.Flags().StringVar(&seekTime, "seek-time", time.Now().Format("2006-01-02 15:04:05"), "Seek time in format YYYY-MM-DD HH:MM:SS")
 	readCmd.Flags().IntVar(&readNum, "num", 10, "Number of messages to read")
-	readCmd.Flags().StringVar(&readAuthPlugin, "auth-plugin", "", "Authentication plugin class name")
-	readCmd.Flags().StringVar(&readAuthParams, "auth-params", "", "Authentication parameters (JSON string)")
+	readCmd.Flags().StringVar(&readAuthPlugin, "auth-plugin", "", "Authentication plugin class name (overrides context)")
+	readCmd.Flags().StringVar(&readAuthParams, "auth-params", "", "Authentication parameters (JSON string) (overrides context)")
 
 	readCmd.MarkFlagRequired("topic")
 }
@@ -52,8 +57,14 @@ func runRead(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid seek_time format. Use YYYY-MM-DD HH:MM:SS: %v", err)
 	}
 
+	// Get configuration from context or command line
+	url, authPlugin, authParams, err := getContextConfig(readPulsarURL, readAuthPlugin, readAuthParams)
+	if err != nil {
+		return fmt.Errorf("failed to get context configuration: %v", err)
+	}
+
 	// Create client
-	clientOpts, err := buildClientOptions(readPulsarURL, readAuthPlugin, readAuthParams)
+	clientOpts, err := buildClientOptions(url, authPlugin, authParams)
 	if err != nil {
 		return fmt.Errorf("failed to build client options: %v", err)
 	}
