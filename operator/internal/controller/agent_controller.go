@@ -262,7 +262,7 @@ type AgentContext struct {
 	Description string                            `json:"description"`
 	Instruction string                            `json:"instruction"`
 	Tools       map[string]*FSFunctionToolContext `json:"tools,omitempty"`
-	PostProcess *ProcessCallback                  `json:"post_process,omitempty"`
+	PostProcess *ProcessCallback                  `json:"postProcess,omitempty"`
 }
 
 func normalizeAgentName(name string) string {
