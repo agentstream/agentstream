@@ -11,6 +11,7 @@ pulsar-client
 
 # JSON processing
 jsonnet>=0.20.0
+json-repair
 
 # Type hints support
 typing-extensions
