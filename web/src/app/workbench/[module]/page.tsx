@@ -24,7 +24,8 @@ export default function Page({ params }: { params: Promise<{ module: Module }> }
         ? list.map(v => {
             const info = parseResourceData(v as ResourceData<PackageSpec>);
             if (module === Module.Function) {
-              info.logo = logos[(v as ResourceData<FunctionSpec>).spec.package] ?? '';
+              const { name, namespace } = (v as ResourceData<FunctionSpec>).spec.packageRef;
+              info.logo = logos[`${namespace}/${name}`] ?? '';
             }
             return <ToolCard info={info} type={module} refresh={refetch} key={info.id} />;
           })
