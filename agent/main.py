@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 from typing import Dict, Any
 from function_stream import FSFunction, FSContext, FSModule, SourceSpec, PulsarSourceConfig
 from google.adk import Agent, Runner
@@ -12,6 +13,38 @@ import uuid
 import _jsonnet
 import os
 from config import AgentConfig
+from json_repair import repair_json
+
+
+def repair_json_output(text: str) -> str:
+    """
+    Repair JSON output using the jsonrepair library.
+    
+    Args:
+        text (str): The text that should contain JSON
+        
+    Returns:
+        str: Repaired JSON string
+    """
+    if not text or not text.strip():
+        return "{}"
+    
+    # Remove markdown code blocks if present
+    text = re.sub(r'```json\s*\n?', '', text)
+    text = re.sub(r'```\s*$', '', text)
+    text = text.strip()
+    
+    try:
+        # Use jsonrepair library to fix the JSON
+        repaired = repair_json(text)
+        # If repair_json returns empty string, return empty object as fallback
+        if not repaired:
+            return "{}"
+        return repaired
+    except Exception as e:
+        # If jsonrepair fails, return empty object as fallback
+        return "{}"
+
 
 class AgentFunction(FSModule):
     def __init__(self):
@@ -100,12 +133,15 @@ class AgentFunction(FSModule):
         if final_response:
             # Apply post-processing if configured
             output = self.outputMap.pop(session_id, final_response).lstrip("```json\n").rstrip("```")
-
+            
+            # Repair JSON to ensure it's valid
+            repaired_output = repair_json_output(output)
+            
             if self.agent_ctx.postProcess and self.agent_ctx.postProcess.jsonnet:
                 try:
                     code = f'''
 local input = {input};
-local agent_output = {output};
+local agent_output = {repaired_output};
 {self.agent_ctx.postProcess.jsonnet}
                     '''
                     # Evaluate the jsonnet script with the response data
@@ -117,7 +153,7 @@ local agent_output = {output};
                 except Exception as e:
                     raise Exception(f"Error in post-processing: {e}")
             else:
-                return json.loads(output)
+                return json.loads(repaired_output)
 
         return None
 
