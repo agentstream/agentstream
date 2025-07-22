@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import FunctionForm from '@/components/FunctionForm';
 import AgentForm from '@/components/AgentForm';
 import { canChange } from '@/common/utils';
+import { NamespaceContextProvider } from '@/contexts/NamespaceContext';
 
 const createForms = {
   [Module.Package]: null,
@@ -18,5 +19,5 @@ export default function Page() {
   if (!canChange(mod)) {
     notFound();
   }
-  return createForms[mod];
+  return <NamespaceContextProvider>{createForms[mod]}</NamespaceContextProvider>;
 }

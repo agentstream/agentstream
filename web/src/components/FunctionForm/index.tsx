@@ -3,7 +3,7 @@
 import { Module } from '@/common/enum';
 import { noticeUnhandledError, routePathOfOverviewPage } from '@/common/utils';
 import { Card, Form, Input } from 'antd';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { configItemPrefix, formLayout } from '@/common/constants';
 import { flattenFunctionConfig, parseResourceData } from '@/common/logics';
@@ -13,6 +13,7 @@ import FormTextField from '../common/FormTextField';
 import FormArrayField from '../common/FormArrayField';
 import FormOptionField from '../common/FormOptionField';
 import FormSubmitButton from '../common/FormSubmitButton';
+import { NamespaceContext } from '@/contexts/NamespaceContext';
 
 const FunctionForm = () => {
   const [form] = Form.useForm();
@@ -45,6 +46,7 @@ const FunctionForm = () => {
   const { mutate } = useCreateResource(Module.Function, () =>
     router.replace(routePathOfOverviewPage(Module.Function))
   );
+  const namespaceOptions = useContext(NamespaceContext).map(value => ({ value, label: value }));
   return (
     <Form
       form={form}
@@ -53,6 +55,11 @@ const FunctionForm = () => {
       onFinish={mutate}
       initialValues={flattenFunctionConfig(config)}
     >
+      <FormOptionField
+        name="namespace"
+        warning="Please choose a namespace!"
+        options={namespaceOptions}
+      />
       <FormTextField name="name" warning={`Please input a ${Module.Function} name!`} />
       <FormTextField name="description" rows={3} />
       <FormOptionField

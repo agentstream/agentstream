@@ -10,17 +10,20 @@ import {
     KubernetesCustomResource,
     UpdateAgentForm
 } from '@/common/types';
-import { client } from '../infra/k8s';
 import { ResourceKind } from '../common/enum';
-import { buildSink, buildSources } from './common';
-import { buildErrorResponse, buildMutateResponse, buildQueryResponse } from '../common/utils';
+import {
+    buildErrorResponse,
+    buildMutateResponse,
+    buildQueryResponse,
+    buildSink,
+    buildSources
+} from '../common/utils';
 import { AgentConfig } from '../common/config';
-
-const namespace = 'default';
+import { client } from '../infra/k8s';
 
 export async function listAllAgents() {
     try {
-        const resp = (await client.listCustomObjectForAllNamespaces({
+        const resp = (await client.customObjectApi.listCustomObjectForAllNamespaces({
             ...AgentConfig
         })) as ResourceList<AgentSpec>;
         return buildQueryResponse(resp);
@@ -31,7 +34,7 @@ export async function listAllAgents() {
 
 export async function getAgentDetails(namespace: string, name: string) {
     try {
-        const resp = (await client.getNamespacedCustomObject({
+        const resp = (await client.customObjectApi.getNamespacedCustomObject({
             ...AgentConfig,
             namespace,
             name
@@ -44,7 +47,17 @@ export async function getAgentDetails(namespace: string, name: string) {
 }
 
 export async function createAgent(form: CreateAgentForm) {
-    const { name, description, model, googleApiKey, instruction, functions, sources, sink } = form;
+    const {
+        name,
+        namespace,
+        description,
+        model,
+        googleApiKey,
+        instruction,
+        functions,
+        sources,
+        sink
+    } = form;
     const { group, version } = AgentConfig;
     const body = {
         apiVersion: `${group}/${version}`,
@@ -67,7 +80,7 @@ export async function createAgent(form: CreateAgentForm) {
         }
     };
     try {
-        const resp = (await client.createNamespacedCustomObject({
+        const resp = (await client.customObjectApi.createNamespacedCustomObject({
             ...AgentConfig,
             namespace,
             body
@@ -80,7 +93,7 @@ export async function createAgent(form: CreateAgentForm) {
 
 export async function deleteAgent(name: string, namespace: string): Promise<AgentStreamApiResp> {
     try {
-        const resp = (await client.deleteNamespacedCustomObject({
+        const resp = (await client.customObjectApi.deleteNamespacedCustomObject({
             ...AgentConfig,
             namespace,
             name
@@ -106,7 +119,7 @@ export async function updateAgent(form: UpdateAgentForm): Promise<AgentStreamApi
     try {
         const {
             metadata: { resourceVersion }
-        } = (await client.getNamespacedCustomObject({
+        } = (await client.customObjectApi.getNamespacedCustomObject({
             ...AgentConfig,
             namespace,
             name
@@ -133,7 +146,7 @@ export async function updateAgent(form: UpdateAgentForm): Promise<AgentStreamApi
                 sink: buildSink(sink)
             }
         };
-        const resp = (await client.replaceNamespacedCustomObject({
+        const resp = (await client.customObjectApi.replaceNamespacedCustomObject({
             ...AgentConfig,
             name,
             namespace,

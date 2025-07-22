@@ -91,6 +91,7 @@ const AgentView = (props: Props) => {
         functions: data.spec.tools.map(item => `${item.namespace}/${item.name}`)
       }}
     >
+      <ViewTextField label="Namespace" value={props.namespace} loading={false} />
       <ViewTextField
         label="Name"
         value={(data?.spec.displayName || data?.metadata.name) ?? ''}

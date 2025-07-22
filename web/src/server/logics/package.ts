@@ -1,13 +1,13 @@
 'use server';
 
 import { PackageSpec, ResourceData, ResourceList } from '@/common/types';
-import { client } from '../infra/k8s';
 import { buildErrorResponse, buildQueryResponse } from '../common/utils';
 import { PackageConfig } from '../common/config';
+import { client } from '../infra/k8s';
 
 export async function listAllPackages() {
     try {
-        const resp = (await client.listCustomObjectForAllNamespaces({
+        const resp = (await client.customObjectApi.listCustomObjectForAllNamespaces({
             ...PackageConfig
         })) as ResourceList<PackageSpec>;
         return buildQueryResponse(resp);
@@ -18,7 +18,7 @@ export async function listAllPackages() {
 
 export async function getPackageDetails(namespace: string, name: string) {
     try {
-        const resp = (await client.getNamespacedCustomObject({
+        const resp = (await client.customObjectApi.getNamespacedCustomObject({
             ...PackageConfig,
             namespace,
             name

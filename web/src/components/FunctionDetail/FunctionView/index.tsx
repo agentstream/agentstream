@@ -33,7 +33,11 @@ const FunctionView = (props: Props) => {
     data: pakData,
     isPending: pakIsPending,
     isError: pakIsError
-  } = useResourceDetails(Module.Package, props.namespace, data?.spec.packageRef?.name ?? '');
+  } = useResourceDetails(
+    Module.Package,
+    data?.spec.packageRef?.namespace ?? '',
+    data?.spec.packageRef?.name ?? ''
+  );
   function handleCancel() {
     form.resetFields();
     props.setInEditing(false);
@@ -68,6 +72,7 @@ const FunctionView = (props: Props) => {
         ...flattenFunctionConfig(config)
       }}
     >
+      <ViewTextField label="Namespace" value={props.namespace} loading={false} />
       <ViewTextField
         label="Name"
         value={(data?.spec.displayName || data?.metadata.name) ?? ''}

@@ -3,6 +3,7 @@ import {
     createWithNotice,
     deleteWithNotice,
     getDetailsWithNotice,
+    listAllNamespacesWithNotice,
     listAllWithNotice,
     updateWithNotice
 } from '@/common/interactions';
@@ -20,6 +21,16 @@ import { usePathname } from 'next/navigation';
 
 export function useModule() {
     return usePathname().split('/')[2] as Module;
+}
+
+export function useNamespaceList() {
+    return useQuery({
+        queryKey: [QueryCacheKey.Namespace],
+        queryFn: async () => {
+            const resp = await listAllNamespacesWithNotice();
+            return resp?.data ?? new Array<string>();
+        }
+    });
 }
 
 export function useResourceList<T extends Module, U = ResourceData<SpecMap[T]>[]>(module: T) {

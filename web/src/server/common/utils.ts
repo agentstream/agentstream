@@ -1,4 +1,10 @@
-import { AgentStreamApiResp, KubernetesApiResp, Metadata, MutateRespData } from '@/common/types';
+import {
+    AgentStreamApiResp,
+    KubernetesApiResp,
+    MessageChannel,
+    Metadata,
+    MutateRespData
+} from '@/common/types';
 import { deserializeJSON } from '@/common/utils';
 import { StatusCodes } from 'http-status-codes';
 import 'server-only';
@@ -31,5 +37,25 @@ export function buildQueryResponse<T>(data: T): AgentStreamApiResp<T> {
     return {
         code: StatusCodes.OK,
         data
+    };
+}
+
+export function buildSources(sources: string): MessageChannel[] {
+    return (sources ?? '')
+        .split(',')
+        .filter(item => item !== '')
+        .map(topic => ({
+            pulsar: {
+                topic,
+                subscriptionName: ''
+            }
+        }));
+}
+
+export function buildSink(sink: string): MessageChannel {
+    return {
+        pulsar: {
+            topic: sink ?? ''
+        }
     };
 }

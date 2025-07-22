@@ -8,18 +8,23 @@ import {
     ResourceList,
     UpdateFunctionForm
 } from '@/common/types';
-import { client } from '../infra/k8s';
 import { ResourceKind } from '../common/enum';
 import { isRequestSuccess, mergeObjects, serializeToJSON } from '@/common/utils';
 import { configItemPrefix } from '@/common/constants';
-import { buildErrorResponse, buildMutateResponse, buildQueryResponse } from '../common/utils';
-import { buildSink, buildSources } from './common';
+import {
+    buildErrorResponse,
+    buildMutateResponse,
+    buildQueryResponse,
+    buildSink,
+    buildSources
+} from '../common/utils';
 import { AgentConfig, FunctionConfig } from '../common/config';
 import { StatusCodes } from 'http-status-codes';
+import { client } from '../infra/k8s';
 
 export async function listAllFunctions() {
     try {
-        const resp = (await client.listCustomObjectForAllNamespaces({
+        const resp = (await client.customObjectApi.listCustomObjectForAllNamespaces({
             ...FunctionConfig
         })) as ResourceList<FunctionSpec>;
         return buildQueryResponse(resp);
@@ -30,7 +35,7 @@ export async function listAllFunctions() {
 
 export async function getFunctionDetails(namespace: string, name: string) {
     try {
-        const resp = (await client.getNamespacedCustomObject({
+        const resp = (await client.customObjectApi.getNamespacedCustomObject({
             ...FunctionConfig,
             namespace,
             name
@@ -42,8 +47,8 @@ export async function getFunctionDetails(namespace: string, name: string) {
 }
 
 export async function createFunction(form: CreateFunctionForm) {
-    const { name, description, package: pak, module, sources, sink } = form;
-    const [namespace, packageName] = pak.split('/');
+    const { name, namespace, description, package: pak, module, sources, sink } = form;
+    const [packageNamespace, packageName] = pak.split('/');
     const { group, version } = FunctionConfig;
     const body = {
         apiVersion: `${group}/${version}`,
@@ -58,7 +63,7 @@ export async function createFunction(form: CreateFunctionForm) {
             module,
             packageRef: {
                 name: packageName,
-                namespace
+                namespace: packageNamespace
             },
             sources: buildSources(sources),
             sink: buildSink(sink),
@@ -66,7 +71,7 @@ export async function createFunction(form: CreateFunctionForm) {
         }
     };
     try {
-        const resp = (await client.createNamespacedCustomObject({
+        const resp = (await client.customObjectApi.createNamespacedCustomObject({
             ...FunctionConfig,
             namespace,
             body
@@ -78,11 +83,11 @@ export async function createFunction(form: CreateFunctionForm) {
 }
 
 async function isFunctionUsed(name: string, namespace: string) {
-    const resp = (await client.listCustomObjectForAllNamespaces({
+    const resp = (await client.customObjectApi.listCustomObjectForAllNamespaces({
         ...AgentConfig
     })) as ResourceList<AgentSpec>;
     return resp.items.some(item =>
-        item.spec.tools.some(tool => tool.namespace === namespace && tool.name === name)
+        (item.spec.tools ?? []).some(tool => tool.namespace === namespace && tool.name === name)
     );
 }
 
@@ -96,7 +101,7 @@ export async function deleteFunction(name: string, namespace: string) {
                 })
             });
         }
-        const resp = (await client.deleteNamespacedCustomObject({
+        const resp = (await client.customObjectApi.deleteNamespacedCustomObject({
             ...FunctionConfig,
             namespace,
             name
@@ -137,7 +142,7 @@ export async function updateFunction(form: UpdateFunctionForm) {
         }
     };
     try {
-        const resp = (await client.replaceNamespacedCustomObject({
+        const resp = (await client.customObjectApi.replaceNamespacedCustomObject({
             ...FunctionConfig,
             name,
             namespace,

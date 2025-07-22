@@ -15,7 +15,8 @@ export const enum RoutePath {
 
 export const enum QueryCacheKey {
     List,
-    Detail
+    Detail,
+    Namespace
 }
 
 // https://ai.google.dev/gemini-api/docs/models

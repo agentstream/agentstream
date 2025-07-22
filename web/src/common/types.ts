@@ -132,8 +132,7 @@ type FunctionConfigs = {
     [index: `${typeof configItemPrefix}.${string}`]: string;
 };
 
-export type CreateFunctionForm = {
-    name: string;
+export type CreateFunctionForm = KubernetesCustomResource & {
     package: ResourceID;
     module: string;
 } & FunctionEditableFields;
@@ -146,8 +145,7 @@ type FunctionEditableFields = {
 
 export type UpdateFunctionForm = KubernetesCustomResource & FunctionEditableFields;
 
-export type CreateAgentForm = {
-    name: string;
+export type CreateAgentForm = KubernetesCustomResource & {
     description: string;
     model: string;
     googleApiKey: string;
@@ -157,7 +155,7 @@ export type CreateAgentForm = {
     sink: string;
 };
 
-export type UpdateAgentForm = KubernetesCustomResource & CreateAgentForm;
+export type UpdateAgentForm = CreateAgentForm;
 
 export type ResourceID = `${string}/${string}`;
 

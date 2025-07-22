@@ -11,6 +11,8 @@ import FormTextField from '../common/FormTextField';
 import FormArrayField from '../common/FormArrayField';
 import FormOptionField from '../common/FormOptionField';
 import FormSubmitButton from '../common/FormSubmitButton';
+import { useContext } from 'react';
+import { NamespaceContext } from '@/contexts/NamespaceContext';
 
 const AgentForm = () => {
   const [form] = Form.useForm();
@@ -31,8 +33,14 @@ const AgentForm = () => {
   const { mutate } = useCreateResource(Module.Agent, () =>
     router.replace(routePathOfOverviewPage(Module.Agent))
   );
+  const namespaceOptions = useContext(NamespaceContext).map(value => ({ value, label: value }));
   return (
     <Form form={form} name={Module.Agent} {...formLayout} onFinish={mutate}>
+      <FormOptionField
+        name="namespace"
+        warning="Please choose a namespace!"
+        options={namespaceOptions}
+      />
       <FormTextField name="name" warning={`Please input a ${Module.Agent} name!`} />
       <FormTextField name="description" rows={3} warning="Description cannot be empty!" />
       <FormOptionField name="model" warning="Please choose a model!" options={modelOptions} />

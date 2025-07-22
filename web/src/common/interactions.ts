@@ -31,6 +31,7 @@ import {
 } from '@/server/logics/agent';
 import { Module } from './enum';
 import { getPackageDetails, listAllPackages } from '@/server/logics/package';
+import { listAllNamespaces } from '@/server/logics/common';
 
 function isCreateFunctionForm(module: Module, form: CreateForm): form is CreateFunctionForm {
     return module === Module.Function;
@@ -126,6 +127,13 @@ export async function listAllWithNotice<T extends Module, U = SpecMap[T]>(module
     const resp = await listAll[module]();
     return checkQueryResult(module, resp)
         ? (resp as AgentStreamApiResp<ResourceList<U>>)
+        : undefined;
+}
+
+export async function listAllNamespacesWithNotice() {
+    const resp = await listAllNamespaces();
+    return checkQueryResult('namespace' as Module, resp)
+        ? (resp as AgentStreamApiResp<string[]>)
         : undefined;
 }
 

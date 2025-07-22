@@ -1,22 +1,15 @@
-import { MessageChannel } from '@/common/types';
-import 'server-only';
+'use server';
 
-export function buildSources(sources: string): MessageChannel[] {
-    return (sources ?? '')
-        .split(',')
-        .filter(item => item !== '')
-        .map(topic => ({
-            pulsar: {
-                topic,
-                subscriptionName: ''
-            }
-        }));
-}
+import { buildErrorResponse, buildQueryResponse } from '../common/utils';
+import { client } from '../infra/k8s';
 
-export function buildSink(sink: string): MessageChannel {
-    return {
-        pulsar: {
-            topic: sink ?? ''
-        }
-    };
+export async function listAllNamespaces() {
+    try {
+        const resp = await client.coreV1Api.listNamespace();
+        return buildQueryResponse(
+            resp.items.map(item => item.metadata?.name ?? '').filter(item => item !== '')
+        );
+    } catch (err) {
+        return buildErrorResponse(err);
+    }
 }
