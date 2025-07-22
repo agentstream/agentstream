@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 
 	fsv1alpha1 "github.com/FunctionStream/function-stream/operator/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
@@ -558,6 +559,62 @@ var _ = Describe("Agent Controller", func() {
 			Expect(agentCtx.Instruction).To(Equal("Test instruction"))
 			Expect(agentCtx.PostProcess).NotTo(BeNil())
 			Expect(agentCtx.PostProcess.Jsonnet).To(Equal("test-jsonnet"))
+		})
+
+		It("Should serialize AgentContext with correct JSON field names", func() {
+			agent := &asv1alpha1.Agent{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-agent-json",
+					Namespace: "default",
+				},
+				Spec: asv1alpha1.AgentSpec{
+					DisplayName: "Test Agent JSON",
+					Description: "A test agent for JSON serialization",
+					Instruction: "Test instruction for JSON",
+					Model: asv1alpha1.ModelConfig{
+						Model: "gpt-4",
+					},
+					PostProcess: &asv1alpha1.PostProcessCallback{
+						Jsonnet: "local response = std.parseJson(std.extVar(\"response\")); {\"formatted\": response.result}",
+					},
+				},
+			}
+
+			controllerReconciler := &AgentReconciler{
+				Client: k8sClient,
+				Scheme: k8sClient.Scheme(),
+				Config: Config{},
+			}
+
+			agentCtx, err := controllerReconciler.buildAgentContext(ctx, agent)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Serialize the AgentContext to JSON to verify the field names
+			jsonBytes, err := json.Marshal(agentCtx)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Parse the JSON to check field names
+			var jsonMap map[string]interface{}
+			err = json.Unmarshal(jsonBytes, &jsonMap)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify that the PostProcess field uses "postProcess" not "post_process"
+			Expect(jsonMap).To(HaveKey("postProcess"))
+			Expect(jsonMap).NotTo(HaveKey("post_process"))
+
+			// Verify the PostProcess content
+			postProcess, ok := jsonMap["postProcess"].(map[string]interface{})
+			Expect(ok).To(BeTrue())
+			Expect(postProcess).To(HaveKey("jsonnet"))
+			Expect(postProcess["jsonnet"]).To(Equal("local response = std.parseJson(std.extVar(\"response\")); {\"formatted\": response.result}"))
+
+			// Verify other fields are present
+			Expect(jsonMap).To(HaveKey("name"))
+			Expect(jsonMap).To(HaveKey("description"))
+			Expect(jsonMap).To(HaveKey("instruction"))
+			Expect(jsonMap["name"]).To(Equal("test_agent_json"))
+			Expect(jsonMap["description"]).To(Equal("A test agent for JSON serialization"))
+			Expect(jsonMap["instruction"]).To(Equal("Test instruction for JSON"))
 		})
 
 		It("Should handle agent with default package configuration", func() {
