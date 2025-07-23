@@ -107,12 +107,14 @@ const AgentView = (props: Props) => {
       <EditableViewTextField
         name="description"
         rows={3}
+        warning={props.inEditing ? 'Description cannot be empty!' : undefined}
         loading={isPending}
         editing={props.inEditing}
         display={description}
       />
       <EditableViewOptionField
         name="model"
+        warning={props.inEditing ? 'Please choose a model!' : undefined}
         options={modelOptions}
         loading={isPending}
         editing={props.inEditing}
@@ -121,6 +123,7 @@ const AgentView = (props: Props) => {
       <EditableViewTextField
         label="Google API Key"
         name="googleApiKey"
+        warning={props.inEditing ? 'API Key cannot be empty!' : undefined}
         loading={isPending}
         editing={props.inEditing}
         display={googleApiKey}
@@ -128,6 +131,7 @@ const AgentView = (props: Props) => {
       <EditableViewTextField
         label="Instructions"
         name="instruction"
+        warning={props.inEditing ? 'Instructions cannot be empty!' : undefined}
         rows={3}
         loading={isPending}
         editing={props.inEditing}
