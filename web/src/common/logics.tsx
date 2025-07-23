@@ -11,7 +11,7 @@ export function parseResourceData<T extends Specs>(item: ResourceData<T>): Resou
   return {
     id: `${item.metadata.namespace}/${item.metadata.name}`,
     name: item.spec.displayName || item.metadata.name,
-    description: item.spec.description,
+    description: item.spec.description ?? '',
     logo: (item.spec as PackageSpec).logo ?? ''
   };
 }

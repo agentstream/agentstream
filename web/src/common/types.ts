@@ -15,25 +15,25 @@ export type Metadata = {
 } & KubernetesCustomResource;
 
 type BaseSpec = {
-    description: string;
-    displayName: string;
+    description?: string;
+    displayName?: string;
 };
 
 export type PackageSpec = BaseSpec & {
     functionType: {
-        cloud: {
+        cloud?: {
             image: string;
         };
     };
-    logo: string;
+    logo?: string;
     modules: Record<
         string,
         {
-            config: Record<string, string>;
-            description: string;
-            displayName: string;
-            sinkSchema: SerializedYAML<unknown>;
-            sourceSchema: SerializedYAML<unknown>;
+            config?: Record<string, string>;
+            description?: string;
+            displayName?: string;
+            sinkSchema?: SerializedYAML<unknown>;
+            sourceSchema?: SerializedYAML<unknown>;
         }
     >;
 };
@@ -41,16 +41,16 @@ export type PackageSpec = BaseSpec & {
 export type FunctionSpec = FunctionLikeSpec & {
     packageRef: KubernetesCustomResource;
     module: string;
-    config: Record<string, string>;
+    config?: Record<string, string>;
 };
 
 type FunctionLikeSpec = BaseSpec & {
-    sources: MessageChannel[];
-    sink: MessageChannel;
+    sources?: MessageChannel[];
+    sink?: MessageChannel;
 };
 
 export type MessageChannel = {
-    pulsar: {
+    pulsar?: {
         topic: string;
         subscriptionName?: string;
     };
@@ -59,7 +59,8 @@ export type MessageChannel = {
 export type AgentSpec = FunctionLikeSpec & {
     instruction: string;
     model: Model;
-    tools: KubernetesCustomResource[];
+    tools?: KubernetesCustomResource[];
+    description: string;
 };
 
 type Model = {

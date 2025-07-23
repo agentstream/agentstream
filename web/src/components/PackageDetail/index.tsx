@@ -8,6 +8,7 @@ import { noticeUnhandledError } from '@/common/utils';
 import ModuleCard from '../common/ModuleCard';
 import { parseResourceData } from '@/common/logics';
 import { useResourceDetails } from '@/hooks';
+import { SerializedYAML } from '@/common/types';
 
 type Props = {
   name: string;
@@ -28,7 +29,7 @@ const PackageDetail = (props: Props) => {
       <DetailCard
         info={{
           ...parseResourceData(data),
-          image: data.spec.functionType.cloud.image
+          image: data.spec.functionType.cloud?.image ?? ''
         }}
         loading={isPending}
       />
@@ -40,10 +41,10 @@ const PackageDetail = (props: Props) => {
           {Object.entries(data.spec.modules).map(([k, v]) => (
             <div key={k}>
               <ModuleCard
-                name={v.displayName}
-                description={v.description}
-                sourceSchema={v.sourceSchema}
-                sinkSchema={v.sinkSchema}
+                name={v.displayName ?? ''}
+                description={v.description ?? ''}
+                sourceSchema={v.sourceSchema ?? ('' as SerializedYAML<unknown>)}
+                sinkSchema={v.sinkSchema ?? ('' as SerializedYAML<unknown>)}
               />
             </div>
           ))}

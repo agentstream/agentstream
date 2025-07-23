@@ -74,6 +74,13 @@ const AgentView = (props: Props) => {
     };
   });
   const [selectedFunctions, selectFunction] = useState('');
+  const description = data?.spec.description ?? '';
+  const model = data?.spec.model.model ?? '';
+  const googleApiKey = data?.spec.model.googleApiKey ?? '';
+  const instruction = data?.spec.instruction ?? '';
+  const sources = (data?.spec.sources ?? []).map(item => item.pulsar?.topic ?? '').join(',');
+  const sink = data?.spec.sink?.pulsar?.topic ?? '';
+  const functions = (data?.spec.tools ?? []).map(tool => `${tool.namespace}/${tool.name}`);
   return isError || !data ? (
     <EmptyPlaceHolder />
   ) : (
@@ -82,13 +89,13 @@ const AgentView = (props: Props) => {
       name={Module.Agent}
       {...formLayout}
       initialValues={{
-        description: data.spec.description,
-        model: data.spec.model.model,
-        googleApiKey: data.spec.model.googleApiKey,
-        instruction: data.spec.instruction,
-        sources: data.spec.sources.map(item => item.pulsar.topic).join(','),
-        sink: data.spec.sink.pulsar.topic,
-        functions: data.spec.tools.map(item => `${item.namespace}/${item.name}`)
+        description,
+        model,
+        googleApiKey,
+        instruction,
+        sources,
+        sink,
+        functions
       }}
     >
       <ViewTextField label="Namespace" value={props.namespace} loading={false} />
@@ -102,21 +109,21 @@ const AgentView = (props: Props) => {
         rows={3}
         loading={isPending}
         editing={props.inEditing}
-        display={data.spec.description}
+        display={description}
       />
       <EditableViewOptionField
         name="model"
         options={modelOptions}
         loading={isPending}
         editing={props.inEditing}
-        display={[data.spec.model.model]}
+        display={[model]}
       />
       <EditableViewTextField
         label="Google API Key"
         name="googleApiKey"
         loading={isPending}
         editing={props.inEditing}
-        display={data.spec.model.googleApiKey}
+        display={googleApiKey}
       />
       <EditableViewTextField
         label="Instructions"
@@ -124,7 +131,7 @@ const AgentView = (props: Props) => {
         rows={3}
         loading={isPending}
         editing={props.inEditing}
-        display={data.spec.instruction}
+        display={instruction}
       />
       <EditableViewArrayField
         name="sources"
@@ -133,14 +140,14 @@ const AgentView = (props: Props) => {
         placeholder="Please input topic names split by comma."
         split=","
         ignore=""
-        display={data.spec.sources.map(item => item.pulsar.topic)}
+        display={sources.split(',')}
       />
       <EditableViewTextField
         name="sink"
         loading={isPending}
         editing={props.inEditing}
         placeholder="Please input a topic name."
-        display={data.spec.sink.pulsar.topic}
+        display={sink}
       />
       <Form.Item label="Tools" colon={false}>
         <Card>
@@ -152,7 +159,7 @@ const AgentView = (props: Props) => {
             onChange={selectFunction}
             multiple={true}
             editing={props.inEditing}
-            display={data.spec.tools.map(tool => funcNames[`${tool.namespace}/${tool.name}`])}
+            display={functions.map(id => funcNames[id]!)}
           />
         </Card>
       </Form.Item>

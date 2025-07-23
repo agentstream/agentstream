@@ -58,6 +58,10 @@ const FunctionView = (props: Props) => {
       ...form.getFieldsValue()
     });
   }
+  const description = data?.spec.description ?? '';
+  const sources = (data?.spec.sources ?? []).map(item => item.pulsar?.topic ?? '').join(',');
+  const sink = data?.spec.sink?.pulsar?.topic ?? '';
+  const mod = data?.spec.module ?? '';
   return isError || !data ? (
     <EmptyPlaceHolder />
   ) : (
@@ -66,9 +70,9 @@ const FunctionView = (props: Props) => {
       name={Module.Function}
       {...formLayout}
       initialValues={{
-        description: data.spec.description,
-        sources: data.spec.sources.map(item => item.pulsar.topic).join(','),
-        sink: data.spec.sink.pulsar.topic,
+        description,
+        sources,
+        sink,
         ...flattenFunctionConfig(config)
       }}
     >
@@ -83,7 +87,7 @@ const FunctionView = (props: Props) => {
         rows={3}
         loading={isPending}
         editing={props.inEditing}
-        display={data.spec.description}
+        display={description}
       />
       <ViewTextField
         label="Package"
@@ -93,9 +97,7 @@ const FunctionView = (props: Props) => {
       />
       <ViewTextField
         label="Module"
-        value={
-          (pakData?.spec.modules ?? {})[data?.spec.module ?? '']?.displayName ?? data?.spec.module
-        }
+        value={(pakData?.spec.modules ?? {})[mod]?.displayName ?? mod}
         loading={isPending}
       />
       <EditableViewArrayField
@@ -105,14 +107,14 @@ const FunctionView = (props: Props) => {
         placeholder="Please input topic names split by comma."
         split=","
         ignore=""
-        display={data.spec.sources.map(item => item.pulsar.topic)}
+        display={sources.split(',')}
       />
       <EditableViewTextField
         name="sink"
         loading={isPending}
         editing={props.inEditing}
         placeholder="Please input a topic name."
-        display={data.spec.sink.pulsar.topic}
+        display={sink}
       />
       {isPending ? (
         <Skeleton />
