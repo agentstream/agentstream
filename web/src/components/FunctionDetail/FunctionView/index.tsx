@@ -20,15 +20,14 @@ type Props = {
 };
 
 const FunctionView = (props: Props) => {
-  const [form] = Form.useForm();
+  // [LoadFunctionInfo]
   const { data, isPending, isError, error, refetch } = useResourceDetails(
     Module.Function,
     props.namespace,
     props.name
   );
-  noticeUnhandledError(isError, error);
-  const config = Object.entries(data?.spec.config ?? {});
-  const configIsNotEmpty = config.length > 0;
+  noticeUnhandledError(isError, error); // [/]
+  // [LoadPackageInfo]
   const {
     data: pakData,
     isPending: pakIsPending,
@@ -37,31 +36,37 @@ const FunctionView = (props: Props) => {
     Module.Package,
     data?.spec.packageRef?.namespace ?? '',
     data?.spec.packageRef?.name ?? ''
-  );
+  ); // [/]
+  // [ResetFormOnCancelEdit]
+  const [form] = Form.useForm();
   function handleCancel() {
     form.resetFields();
     props.setInEditing(false);
-  }
+  } // [/]
   const { mutate } = useUpdateResource(Module.Function, () => {
     refetch();
     props.setInEditing(false);
   });
   async function handleSubmit() {
+    // [TurnToEditModeOnClickEdit]
     if (!props.inEditing) {
       props.setInEditing(true);
       return;
-    }
+    } // [/]
+    // [ExecUpdateOnClickSave]
     const { name, namespace } = props;
     mutate({
       name,
       namespace,
       ...form.getFieldsValue()
-    });
+    }); // [/]
   }
+  // [LoadViewData]
   const description = data?.spec.description ?? '';
   const sources = (data?.spec.sources ?? []).map(item => item.pulsar?.topic ?? '').join(',');
   const sink = data?.spec.sink?.pulsar?.topic ?? '';
   const mod = data?.spec.module ?? '';
+  const config = Object.entries(data?.spec.config ?? {}); // [/]
   return isError || !data ? (
     <EmptyPlaceHolder />
   ) : (
@@ -120,7 +125,7 @@ const FunctionView = (props: Props) => {
         <Skeleton />
       ) : (
         <Form.Item label="Configs" colon={false}>
-          {configIsNotEmpty ? (
+          {config.length > 0 ? (
             <Card>
               {config.map(([key, value]) => (
                 <EditableViewTextField

@@ -15,25 +15,22 @@ import { useContext } from 'react';
 import { NamespaceContext } from '@/contexts/NamespaceContext';
 
 const AgentForm = () => {
-  const [form] = Form.useForm();
+  // [LoadFunctionOptions]
   const { data, isPending, isError, error } = useResourceList(Module.Function);
   noticeUnhandledError(isError, error);
-  const modelOptions = googleAIModels.map(value => ({
-    value,
-    label: value
-  }));
   const functionOptions = (data ?? []).map(item => {
     const { id, name } = parseResourceData(item);
     return {
       value: id,
       label: name
     };
-  });
+  }); // [/]
   const router = useRouter();
   const { mutate } = useCreateResource(Module.Agent, () =>
     router.replace(routePathOfOverviewPage(Module.Agent))
   );
   const namespaceOptions = useContext(NamespaceContext).map(value => ({ value, label: value }));
+  const [form] = Form.useForm();
   return (
     <Form form={form} name={Module.Agent} {...formLayout} onFinish={mutate}>
       <FormOptionField
@@ -43,7 +40,14 @@ const AgentForm = () => {
       />
       <FormTextField name="name" warning={`Please input a ${Module.Agent} name!`} />
       <FormTextField name="description" rows={3} warning="Description cannot be empty!" />
-      <FormOptionField name="model" warning="Please choose a model!" options={modelOptions} />
+      <FormOptionField
+        name="model"
+        warning="Please choose a model!"
+        options={googleAIModels.map(value => ({
+          value,
+          label: value
+        }))}
+      />
       <FormTextField
         name="googleApiKey"
         label="Google API Key"

@@ -22,13 +22,14 @@ type Props = {
 };
 
 const AgentView = (props: Props) => {
-  const [form] = Form.useForm();
+  // [LoadAgentInfo]
   const { data, isPending, isError, error, refetch } = useResourceDetails(
     Module.Agent,
     props.namespace,
     props.name
   );
-  noticeUnhandledError(isError, error);
+  noticeUnhandledError(isError, error); // [/]
+  // [LoadFunctionData]
   const {
     data: funcResp,
     isPending: funcIsPending,
@@ -36,51 +37,54 @@ const AgentView = (props: Props) => {
     error: funcError
   } = useResourceList(Module.Function);
   noticeUnhandledError(funcIsError, funcError);
-  const allFunctionsData = funcResp ?? [];
+  const allFunctionsData = funcResp ?? []; // [/]
+  // [ExtractFunctionNames]
   const funcNames = allFunctionsData
     .map(f => ({
       [`${f.metadata.namespace}/${f.metadata.name}`]: f.spec.displayName
     }))
-    .reduce((obj1, obj2) => ({ ...obj1, ...obj2 }), {});
+    .reduce((obj1, obj2) => ({ ...obj1, ...obj2 }), {}); // [/]
+  // [ResetFormOnCancelEdit]
+  const [form] = Form.useForm();
   function handleCancel() {
     form.resetFields();
     props.setInEditing(false);
-  }
+  } // [/]
   const { mutate } = useUpdateResource(Module.Agent, () => {
     refetch();
     props.setInEditing(false);
   });
   async function handleSubmit() {
+    // [TurnToEditModeOnClickEdit]
     if (!props.inEditing) {
       props.setInEditing(true);
       return;
-    }
+    } // [/]
+    // [ExecUpdateOnClickSave]
     const { name, namespace } = props;
     mutate({
       name,
       namespace,
       ...form.getFieldsValue()
-    });
+    }); // [/]
   }
-  const modelOptions = googleAIModels.map(value => ({
-    value,
-    label: value
-  }));
+  // [BuildFunctionOptions]
   const functionOptions = allFunctionsData.map(item => {
     const { id, name } = parseResourceData(item);
     return {
       value: id,
       label: name
     };
-  });
+  }); // [/]
   const [selectedFunctions, selectFunction] = useState('');
+  // [LoadViewData]
   const description = data?.spec.description ?? '';
   const model = data?.spec.model.model ?? '';
   const googleApiKey = data?.spec.model.googleApiKey ?? '';
   const instruction = data?.spec.instruction ?? '';
   const sources = (data?.spec.sources ?? []).map(item => item.pulsar?.topic ?? '').join(',');
   const sink = data?.spec.sink?.pulsar?.topic ?? '';
-  const functions = (data?.spec.tools ?? []).map(tool => `${tool.namespace}/${tool.name}`);
+  const functions = (data?.spec.tools ?? []).map(tool => `${tool.namespace}/${tool.name}`); // [/]
   return isError || !data ? (
     <EmptyPlaceHolder />
   ) : (
@@ -115,7 +119,10 @@ const AgentView = (props: Props) => {
       <EditableViewOptionField
         name="model"
         warning={props.inEditing ? 'Please choose a model!' : undefined}
-        options={modelOptions}
+        options={googleAIModels.map(value => ({
+          value,
+          label: value
+        }))}
         loading={isPending}
         editing={props.inEditing}
         display={[model]}

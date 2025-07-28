@@ -16,7 +16,7 @@ import FormSubmitButton from '../common/FormSubmitButton';
 import { NamespaceContext } from '@/contexts/NamespaceContext';
 
 const FunctionForm = () => {
-  const [form] = Form.useForm();
+  // [LoadPackageOptions]
   const { data, isPending, isError, error } = useResourceList(Module.Package);
   noticeUnhandledError(isError, error);
   const allPackagesData = data ?? [];
@@ -26,8 +26,9 @@ const FunctionForm = () => {
       value: id,
       label: name
     };
-  });
+  }); // [/]
   const [selectedPackage, setPackage] = useState('');
+  // [LoadModuleOptions]
   const selectedPackages = allPackagesData.filter(
     item => parseResourceData(item).id === selectedPackage
   );
@@ -35,13 +36,14 @@ const FunctionForm = () => {
   const moduleOptions = Object.entries(modules).map(item => ({
     value: item[0],
     label: item[1].displayName
-  }));
-  const [selectedModule, selectModule] = useState('');
+  })); // [/]
+  // [ClearModuleOptionOnPackageOptionChange]
+  const [form] = Form.useForm();
   useUpdateEffect(() => {
     form.setFieldValue('module', '');
-  }, [form, selectedPackage]);
+  }, [form, selectedPackage]); // [/]
+  const [selectedModule, selectModule] = useState('');
   const config = Object.entries(selectedPackages[0]?.spec.modules[selectedModule]?.config ?? {});
-  const configIsNotEmpty = config.length > 0;
   const router = useRouter();
   const { mutate } = useCreateResource(Module.Function, () =>
     router.replace(routePathOfOverviewPage(Module.Function))
@@ -85,7 +87,7 @@ const FunctionForm = () => {
       />
       <FormTextField name="sink" placeholder="Please input a topic name." />
       <Form.Item label="Configs" colon={false}>
-        {configIsNotEmpty ? (
+        {config.length > 0 ? (
           <Card>
             {config.map(([key]) => (
               <FormTextField name={`${configItemPrefix}.${key}`} label={key} key={key} />
