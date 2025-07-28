@@ -24,10 +24,11 @@ export default function PageLayout({
   const { height, width } = useWindowSize();
   const topbarHeight = Math.max(height / 12, 48).toFixed(3);
   const sidebarWidth = Math.max(width / 6, 120).toFixed(3);
+  // [AvoidHydrationError]
   const [isClient, setIsClient] = useState(false);
   useEffectOnce(() => {
     setIsClient(true);
-  });
+  }); // [/]
   return (
     isClient && (
       <Splitter layout="vertical" className="h-screen! w-screen!" onResize={() => {}}>
