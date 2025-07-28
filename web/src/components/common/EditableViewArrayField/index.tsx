@@ -17,11 +17,12 @@ type Props = {
 
 const EditableViewArrayField = (props: Props) => {
   const [value, setValue] = useState('');
+  // [LoadCurrentValueOnViewMode]
   useEffect(() => {
     if (!props.editing) {
       setValue(props.display.join(props.split));
     }
-  }, [props.editing, props.display, props.split]);
+  }, [props.editing, props.display, props.split]); // [/]
   const elements = value.split(props.split).filter(item => item !== props.ignore);
   const label = props.label ?? capitalize(props.name);
   return (

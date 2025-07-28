@@ -18,20 +18,23 @@ type Props = {
 };
 
 const ToolCard = (props: Props) => {
+  // [BackToPlaceHolderOnIconLoadingError]
   const [showPlaceHolder, setShowPlaceHolder] = useState(props.info.logo === '');
   function handleError() {
     setShowPlaceHolder(true);
     return false;
-  }
+  } // [/]
+  // [GoToDetailPageOnClick]
   const router = useRouter();
   function handleClick() {
     router.push(routePathOfDetailPage(props.type, encodeURIComponent(props.info.id)));
-  }
+  } // [/]
+  // [ExecDeleteOnClickDelete]
   const { mutate } = useDeleteResource(props.type, props.refresh);
   async function handleDelete() {
     const [namespace, name] = props.info.id.split('/');
     mutate({ namespace, name });
-  }
+  } // [/]
   return (
     <Card className="min-w-64 h-40" variant="borderless">
       <Space direction="vertical" onClick={handleClick} className="hover:cursor-pointer">
@@ -63,12 +66,7 @@ const ToolCard = (props: Props) => {
             </Typography.Paragraph>
           }
         />
-        <Typography.Paragraph
-          ellipsis={{
-            rows: 3
-          }}
-          className="w-53 max-h-18"
-        >
+        <Typography.Paragraph ellipsis={{ rows: 3 }} className="w-53 max-h-18">
           {props.info.description}
         </Typography.Paragraph>
       </Space>
