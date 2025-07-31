@@ -1,14 +1,19 @@
+'use client';
+
 import { Module, RoutePath } from '@/common/enum';
-import { routePathOfModuleOverview } from '@/common/utils';
+import { routePathOfOverviewPage } from '@/common/utils';
 import NavBar from '@/components/NavBar';
 import NavMenu from '@/components/NavMenu';
 import QueryContext from '@/contexts/QueryContext';
+import { Splitter } from 'antd';
+import { useState } from 'react';
+import { useEffectOnce, useWindowSize } from 'react-use';
 
 const routes = {
   [RoutePath.WorkBench]: 'Dashboard',
-  [routePathOfModuleOverview(Module.Package)]: 'Package',
-  [routePathOfModuleOverview(Module.Function)]: 'Function',
-  [routePathOfModuleOverview(Module.Agent)]: 'Agent'
+  [routePathOfOverviewPage(Module.Package)]: 'Package',
+  [routePathOfOverviewPage(Module.Function)]: 'Function',
+  [routePathOfOverviewPage(Module.Agent)]: 'Agent'
 };
 
 export default function PageLayout({
@@ -16,19 +21,34 @@ export default function PageLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { height, width } = useWindowSize();
+  const topbarHeight = Math.max(height / 12, 48).toFixed(3);
+  const sidebarWidth = Math.max(width / 6, 120).toFixed(3);
+  // [AvoidHydrationError]
+  const [isClient, setIsClient] = useState(false);
+  useEffectOnce(() => {
+    setIsClient(true);
+  }); // [/]
   return (
-    <div className="w-screen h-screen">
-      <header className="w-full h-1/12 min-h-12">
-        <NavBar />
-      </header>
-      <main className="w-full h-11/12 flex">
-        <aside className="h-full w-1/6 min-w-25">
-          <NavMenu route={routes} />
-        </aside>
-        <main className="w-full h-full overflow-auto p-5 bg-gray-bg">
-          <QueryContext>{children}</QueryContext>
-        </main>
-      </main>
-    </div>
+    isClient && (
+      <Splitter layout="vertical" className="h-screen! w-screen!" onResize={() => {}}>
+        <Splitter.Panel resizable={false} defaultSize={topbarHeight} size={topbarHeight}>
+          <NavBar />
+        </Splitter.Panel>
+        <Splitter.Panel resizable={false}>
+          <Splitter onResize={() => {}}>
+            <Splitter.Panel resizable={false} defaultSize={sidebarWidth} size={sidebarWidth}>
+              <NavMenu route={routes} />
+            </Splitter.Panel>
+            <Splitter.Panel
+              resizable={false}
+              className="w-full! h-full! overflow-auto p-5! bg-gray-bg"
+            >
+              <QueryContext>{children}</QueryContext>
+            </Splitter.Panel>
+          </Splitter>
+        </Splitter.Panel>
+      </Splitter>
+    )
   );
 }
