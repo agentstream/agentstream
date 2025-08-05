@@ -11,17 +11,6 @@ import (
     "time"
 )
 
-var globalTokenCounter = map[string]int64{
-    "prompt_tokens":    0,
-    "candidates_tokens": 0,
-    "cache_tokens":     0,
-    "total_tokens":     0,
-}
-
-func getTokens() map[string]int64 {
-    return globalTokenCounter
-}
-
 // Parse Prometheus metrics and extract values
 func parseMetrics(metrics string) map[string]int64 {
     result := make(map[string]int64)
@@ -51,23 +40,31 @@ func parseMetrics(metrics string) map[string]int64 {
 }
 
 func TestPrometheusMetricsExposed(t *testing.T) {
-    // Wait for service to start and expose port
-    time.Sleep(2 * time.Second)
+    // Wait for service to start and expose port using retry mechanism
+    var resp *http.Response
+    var err error
+    maxWait := 5 * time.Second
+    interval := 200 * time.Millisecond
+    start := time.Now()
+    for {
+        resp, err = http.Get("http://localhost:8000/metrics")
+        if err == nil && resp.StatusCode == http.StatusOK {
+            break
+        }
+        if time.Since(start) > maxWait {
+            t.Fatalf("Failed to access Prometheus metrics after %v: %v", maxWait, err)
+        }
+        time.Sleep(interval)
 
-    // Access local Prometheus metrics endpoint
-    resp, err := http.Get("http://localhost:8000/metrics")
-    if err != nil {
-        t.Fatal("Failed to access Prometheus metrics: %v", err)
-    }
     defer resp.Body.Close()
 
     if resp.StatusCode != http.StatusOK {
-        t.Fatal("Metrics returned non-200 status code: %d", resp.StatusCode)
+        t.Fatalf("Metrics returned non-200 status code: %d", resp.StatusCode)
     }
 
     body, err := io.ReadAll(resp.Body)
     if err != nil {
-        t.Fatal("Failed to read metrics content: %v", err)
+        t.Fatalf("Failed to read metrics content: %v", err)
     }
 
     metrics := string(body)
@@ -82,7 +79,7 @@ func TestPrometheusMetricsExposed(t *testing.T) {
     
     for _, metric := range expectedMetrics {
         if !strings.Contains(metrics, metric) {
-            t.Error("Metric not found: %s", metric)
+            t.Errorf("Metric not found: %s", metric)
         }
     }
     
