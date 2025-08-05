@@ -17,6 +17,9 @@ from config import AgentConfig
 from json_repair import repair_json
 from prometheus_client import Counter, start_http_server
 
+# Thread lock for protecting global token counter
+TOKEN_COUNTER_LOCK = threading.Lock()
+
 GLOBAL_TOKEN_COUNTER = {
     "prompt_tokens": 0,
     "candidates_tokens": 0,
@@ -25,7 +28,9 @@ GLOBAL_TOKEN_COUNTER = {
 }
 
 def get_tokens():
-    return GLOBAL_TOKEN_COUNTER
+    """Get current token counts with thread safety"""
+    with TOKEN_COUNTER_LOCK:
+        return GLOBAL_TOKEN_COUNTER.copy()  # Return a copy to avoid external modification
 
 # Prometheus Counter metrics
 PROMPT_TOKENS_COUNTER = Counter('prompt_tokens_total', 'Total prompt tokens')
@@ -33,19 +38,11 @@ CANDIDATES_TOKENS_COUNTER = Counter('candidates_tokens_total', 'Total candidates
 CACHE_TOKENS_COUNTER = Counter('cache_tokens_total', 'Total cache tokens')
 TOTAL_TOKENS_COUNTER = Counter('total_tokens_total', 'Total tokens')
 
-# init Prometheus Counter metrics
-PROMPT_TOKENS_COUNTER.inc(0)
-CANDIDATES_TOKENS_COUNTER.inc(0)
-CACHE_TOKENS_COUNTER.inc(0)
-TOTAL_TOKENS_COUNTER.inc(0)
-
-
 # start Prometheus metrics server
 def start_prometheus_server():
-    start_http_server(8000)
-    print("Prometheus metrics server started on :8000")
-
-threading.Thread(target=start_prometheus_server, daemon=True).start()
+    port = int(os.environ.get("PROMETHEUS_PORT", 8000))
+    start_http_server(port)
+    print(f"Prometheus metrics server started on :{port}")
 
 def repair_json_output(text: str) -> str:
     """
@@ -159,16 +156,24 @@ class AgentFunction(FSModule):
         agent_event_generator = self.runner.run_async(user_id=user_id, session_id=session_id, new_message=content)
         async for event in agent_event_generator:
             if hasattr(event, "usage_metadata") and event.usage_metadata:
-                prompt_inc = getattr(event.usage_metadata, "prompt_token_count", 0)
-                candidates_inc = getattr(event.usage_metadata, "candidates_token_count", 0)
-                cache_inc = getattr(event.usage_metadata, "cache_token_count", 0)
-                total_inc = getattr(event.usage_metadata, "total_token_count", 0)
+                token_attrs = {
+                    "prompt_tokens": "prompt_token_count",
+                    "candidates_tokens": "candidates_token_count",
+                    "cache_tokens": "cache_token_count",
+                    "total_tokens": "total_token_count"
+                }
 
-                # Update global token counter
-                GLOBAL_TOKEN_COUNTER["prompt_tokens"] += prompt_inc
-                GLOBAL_TOKEN_COUNTER["candidates_tokens"] += candidates_inc
-                GLOBAL_TOKEN_COUNTER["cache_tokens"] += cache_inc
-                GLOBAL_TOKEN_COUNTER["total_tokens"] += total_inc
+                token_incs = {key: getattr(event.usage_metadata, attr, 0) for key, attr in token_attrs.items()}
+                prompt_inc = token_incs["prompt_tokens"]
+                candidates_inc = token_incs["candidates_tokens"]
+                cache_inc = token_incs["cache_tokens"]
+                total_inc = token_incs["total_tokens"]
+
+                with TOKEN_COUNTER_LOCK:
+                    GLOBAL_TOKEN_COUNTER["prompt_tokens"] += prompt_inc
+                    GLOBAL_TOKEN_COUNTER["candidates_tokens"] += candidates_inc
+                    GLOBAL_TOKEN_COUNTER["cache_tokens"] += cache_inc
+                    GLOBAL_TOKEN_COUNTER["total_tokens"] += total_inc
 
                 # Update Prometheus counters
                 PROMPT_TOKENS_COUNTER.inc(prompt_inc)
@@ -217,6 +222,7 @@ local agent_output = {repaired_output};
 
 async def main():
     agent_function = AgentFunction()
+    threading.Thread(target=start_prometheus_server, daemon=True).start()
 
     # Initialize the FunctionStream function
     function = FSFunction(
