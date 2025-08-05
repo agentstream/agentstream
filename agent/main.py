@@ -1,6 +1,7 @@
 import asyncio
 import json
 import re
+import threading
 from typing import Dict, Any
 from function_stream import FSFunction, FSContext, FSModule, SourceSpec, PulsarSourceConfig
 from google.adk import Agent, Runner
@@ -14,26 +15,56 @@ import _jsonnet
 import os
 from config import AgentConfig
 from json_repair import repair_json
+from prometheus_client import Counter, start_http_server
 
+GLOBAL_TOKEN_COUNTER = {
+    "prompt_tokens": 0,
+    "candidates_tokens": 0,
+    "cache_tokens": 0,
+    "total_tokens": 0
+}
+
+def get_tokens():
+    return GLOBAL_TOKEN_COUNTER
+
+# Prometheus Counter metrics
+PROMPT_TOKENS_COUNTER = Counter('prompt_tokens_total', 'Total prompt tokens')
+CANDIDATES_TOKENS_COUNTER = Counter('candidates_tokens_total', 'Total candidates tokens')
+CACHE_TOKENS_COUNTER = Counter('cache_tokens_total', 'Total cache tokens')
+TOTAL_TOKENS_COUNTER = Counter('total_tokens_total', 'Total tokens')
+
+# init Prometheus Counter metrics
+PROMPT_TOKENS_COUNTER.inc(0)
+CANDIDATES_TOKENS_COUNTER.inc(0)
+CACHE_TOKENS_COUNTER.inc(0)
+TOTAL_TOKENS_COUNTER.inc(0)
+
+
+# start Prometheus metrics server
+def start_prometheus_server():
+    start_http_server(8000)
+    print("Prometheus metrics server started on :8000")
+
+threading.Thread(target=start_prometheus_server, daemon=True).start()
 
 def repair_json_output(text: str) -> str:
     """
     Repair JSON output using the jsonrepair library.
-    
+
     Args:
         text (str): The text that should contain JSON
-        
+
     Returns:
         str: Repaired JSON string
     """
     if not text or not text.strip():
         return "{}"
-    
+
     # Remove markdown code blocks if present
     text = re.sub(r'```json\s*\n?', '', text)
     text = re.sub(r'```\s*$', '', text)
     text = text.strip()
-    
+
     try:
         # Use jsonrepair library to fix the JSON
         repaired = repair_json(text)
@@ -68,11 +99,11 @@ class AgentFunction(FSModule):
 
     def init(self, context: FSContext):
         self.config = AgentConfig.model_validate(context.get_configs())
-        
+
         # Extract auth parameters from PulsarConfig if available
         auth_plugin = self.config.pulsarRpc.authPlugin
         auth_params = self.config.pulsarRpc.authParams
-        
+
         self.rpc_manager = PulsarRPCManager(
             service_url=self.config.pulsarRpc.serviceUrl,
             response_topic=self.config.responseSource.pulsar.topic,
@@ -94,7 +125,7 @@ class AgentFunction(FSModule):
             # Fallback to in-memory session service if no database config
             from google.adk.sessions import InMemorySessionService
             self.session_service = InMemorySessionService()
-        
+
         self.runner = None
 
         if self.config.model.googleApiKey:
@@ -119,24 +150,41 @@ class AgentFunction(FSModule):
         content = types.Content(role='user',
                                 parts=[types.Part(text=input)])
         session_id = str(uuid.uuid4())
-        
+
         # Get user_id from data, fallback to uuid if not present
         user_id = data.get('__user_id', str(uuid.uuid4()))
-        
+
         await self.session_service.create_session(app_name=self.config.app_name, user_id=user_id, session_id=session_id)
         final_response = None
         agent_event_generator = self.runner.run_async(user_id=user_id, session_id=session_id, new_message=content)
         async for event in agent_event_generator:
+            if hasattr(event, "usage_metadata") and event.usage_metadata:
+                prompt_inc = getattr(event.usage_metadata, "prompt_token_count", 0)
+                candidates_inc = getattr(event.usage_metadata, "candidates_token_count", 0)
+                cache_inc = getattr(event.usage_metadata, "cache_token_count", 0)
+                total_inc = getattr(event.usage_metadata, "total_token_count", 0)
+
+                # Update global token counter
+                GLOBAL_TOKEN_COUNTER["prompt_tokens"] += prompt_inc
+                GLOBAL_TOKEN_COUNTER["candidates_tokens"] += candidates_inc
+                GLOBAL_TOKEN_COUNTER["cache_tokens"] += cache_inc
+                GLOBAL_TOKEN_COUNTER["total_tokens"] += total_inc
+
+                # Update Prometheus counters
+                PROMPT_TOKENS_COUNTER.inc(prompt_inc)
+                CANDIDATES_TOKENS_COUNTER.inc(candidates_inc)
+                CACHE_TOKENS_COUNTER.inc(cache_inc)
+                TOTAL_TOKENS_COUNTER.inc(total_inc)
             if event.is_final_response():
                 final_response = event.content.parts[0].text
                 break
         if final_response:
             # Apply post-processing if configured
             output = self.outputMap.pop(session_id, final_response).lstrip("```json\n").rstrip("```")
-            
+
             # Repair JSON to ensure it's valid
             repaired_output = repair_json_output(output)
-            
+
             if self.agent_ctx.postProcess and self.agent_ctx.postProcess.jsonnet:
                 try:
                     code = f'''
