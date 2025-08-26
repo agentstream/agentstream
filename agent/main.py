@@ -1,6 +1,7 @@
 import asyncio
 import json
 import re
+import threading
 from typing import Dict, Any
 from function_stream import FSFunction, FSContext, FSModule, SourceSpec, PulsarSourceConfig
 from google.adk import Agent, Runner
@@ -14,26 +15,57 @@ import _jsonnet
 import os
 from config import AgentConfig
 from json_repair import repair_json
+from prometheus_client import Counter, make_asgi_app
+import uvicorn
+from contextlib import suppress
 
+# Thread lock for protecting global token counter
+TOKEN_COUNTER_LOCK = threading.Lock()
+
+GLOBAL_TOKEN_COUNTER = {
+    "prompt_tokens": 0,
+    "candidates_tokens": 0,
+    "cache_tokens": 0,
+    "total_tokens": 0
+}
+
+def get_tokens():
+    """Get current token counts with thread safety"""
+    with TOKEN_COUNTER_LOCK:
+        return GLOBAL_TOKEN_COUNTER.copy()  # Return a copy to avoid external modification
+
+# Prometheus Counter metrics
+PROMPT_TOKENS_COUNTER = Counter('prompt_tokens_total', 'Total prompt tokens')
+CANDIDATES_TOKENS_COUNTER = Counter('candidates_tokens_total', 'Total candidates tokens')
+CACHE_TOKENS_COUNTER = Counter('cache_tokens_total', 'Total cache tokens')
+TOTAL_TOKENS_COUNTER = Counter('total_tokens_total', 'Total tokens')
+
+async def start_prometheus_server():
+    port = int(os.environ.get("PROMETHEUS_PORT", 8000))
+    app = make_asgi_app()
+    config = uvicorn.Config(app=app, host="0.0.0.0", port=port, log_level="info")
+    server = uvicorn.Server(config)
+    print(f"Prometheus metrics server starting on :{port}")
+    await server.serve()
 
 def repair_json_output(text: str) -> str:
     """
     Repair JSON output using the jsonrepair library.
-    
+
     Args:
         text (str): The text that should contain JSON
-        
+
     Returns:
         str: Repaired JSON string
     """
     if not text or not text.strip():
         return "{}"
-    
+
     # Remove markdown code blocks if present
     text = re.sub(r'```json\s*\n?', '', text)
     text = re.sub(r'```\s*$', '', text)
     text = text.strip()
-    
+
     try:
         # Use jsonrepair library to fix the JSON
         repaired = repair_json(text)
@@ -68,11 +100,11 @@ class AgentFunction(FSModule):
 
     def init(self, context: FSContext):
         self.config = AgentConfig.model_validate(context.get_configs())
-        
+
         # Extract auth parameters from PulsarConfig if available
         auth_plugin = self.config.pulsarRpc.authPlugin
         auth_params = self.config.pulsarRpc.authParams
-        
+
         self.rpc_manager = PulsarRPCManager(
             service_url=self.config.pulsarRpc.serviceUrl,
             response_topic=self.config.responseSource.pulsar.topic,
@@ -94,7 +126,7 @@ class AgentFunction(FSModule):
             # Fallback to in-memory session service if no database config
             from google.adk.sessions import InMemorySessionService
             self.session_service = InMemorySessionService()
-        
+
         self.runner = None
 
         if self.config.model.googleApiKey:
@@ -119,24 +151,48 @@ class AgentFunction(FSModule):
         content = types.Content(role='user',
                                 parts=[types.Part(text=input)])
         session_id = str(uuid.uuid4())
-        
+
         # Get user_id from data, fallback to uuid if not present
         user_id = data.get('__user_id', str(uuid.uuid4()))
-        
+
         await self.session_service.create_session(app_name=self.config.app_name, user_id=user_id, session_id=session_id)
         final_response = None
         agent_event_generator = self.runner.run_async(user_id=user_id, session_id=session_id, new_message=content)
         async for event in agent_event_generator:
+            if hasattr(event, "usage_metadata") and event.usage_metadata:
+                token_attrs = {
+                    "prompt_tokens": "prompt_token_count",
+                    "candidates_tokens": "candidates_token_count",
+                    "cache_tokens": "cache_token_count",
+                    "total_tokens": "total_token_count"
+                }
+
+                token_incs = {key: getattr(event.usage_metadata, attr, 0) for key, attr in token_attrs.items()}
+                prompt_inc = token_incs["prompt_tokens"]
+                candidates_inc = token_incs["candidates_tokens"]
+                cache_inc = token_incs["cache_tokens"]
+                total_inc = token_incs["total_tokens"]
+
+                with TOKEN_COUNTER_LOCK:
+                    GLOBAL_TOKEN_COUNTER["prompt_tokens"] += prompt_inc
+                    GLOBAL_TOKEN_COUNTER["candidates_tokens"] += candidates_inc
+                    GLOBAL_TOKEN_COUNTER["cache_tokens"] += cache_inc
+                    GLOBAL_TOKEN_COUNTER["total_tokens"] += total_inc
+
+                PROMPT_TOKENS_COUNTER.inc(prompt_inc)
+                CANDIDATES_TOKENS_COUNTER.inc(candidates_inc)
+                CACHE_TOKENS_COUNTER.inc(cache_inc)
+                TOTAL_TOKENS_COUNTER.inc(total_inc)
             if event.is_final_response():
                 final_response = event.content.parts[0].text
                 break
         if final_response:
             # Apply post-processing if configured
             output = self.outputMap.pop(session_id, final_response).lstrip("```json\n").rstrip("```")
-            
+
             # Repair JSON to ensure it's valid
             repaired_output = repair_json_output(output)
-            
+
             if self.agent_ctx.postProcess and self.agent_ctx.postProcess.jsonnet:
                 try:
                     code = f'''
@@ -170,6 +226,8 @@ local agent_output = {repaired_output};
 async def main():
     agent_function = AgentFunction()
 
+    metrics_task = asyncio.create_task(start_prometheus_server())
+
     # Initialize the FunctionStream function
     function = FSFunction(
         process_funcs={
@@ -185,6 +243,10 @@ async def main():
     finally:
         await function.close()
         await agent_function.close()
+        if metrics_task and not metrics_task.done():
+            metrics_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await metrics_task
 
 
 if __name__ == "__main__":
