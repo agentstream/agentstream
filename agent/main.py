@@ -15,7 +15,9 @@ import _jsonnet
 import os
 from config import AgentConfig
 from json_repair import repair_json
-from prometheus_client import Counter, start_http_server
+from prometheus_client import Counter, make_asgi_app
+import uvicorn
+from contextlib import suppress
 
 # Thread lock for protecting global token counter
 TOKEN_COUNTER_LOCK = threading.Lock()
@@ -38,11 +40,13 @@ CANDIDATES_TOKENS_COUNTER = Counter('candidates_tokens_total', 'Total candidates
 CACHE_TOKENS_COUNTER = Counter('cache_tokens_total', 'Total cache tokens')
 TOTAL_TOKENS_COUNTER = Counter('total_tokens_total', 'Total tokens')
 
-# start Prometheus metrics server
-def start_prometheus_server():
+async def start_prometheus_server():
     port = int(os.environ.get("PROMETHEUS_PORT", 8000))
-    start_http_server(port)
-    print(f"Prometheus metrics server started on :{port}")
+    app = make_asgi_app()
+    config = uvicorn.Config(app=app, host="0.0.0.0", port=port, log_level="info")
+    server = uvicorn.Server(config)
+    print(f"Prometheus metrics server starting on :{port}")
+    await server.serve()
 
 def repair_json_output(text: str) -> str:
     """
@@ -175,7 +179,6 @@ class AgentFunction(FSModule):
                     GLOBAL_TOKEN_COUNTER["cache_tokens"] += cache_inc
                     GLOBAL_TOKEN_COUNTER["total_tokens"] += total_inc
 
-                # Update Prometheus counters
                 PROMPT_TOKENS_COUNTER.inc(prompt_inc)
                 CANDIDATES_TOKENS_COUNTER.inc(candidates_inc)
                 CACHE_TOKENS_COUNTER.inc(cache_inc)
@@ -222,7 +225,8 @@ local agent_output = {repaired_output};
 
 async def main():
     agent_function = AgentFunction()
-    threading.Thread(target=start_prometheus_server, daemon=True).start()
+
+    metrics_task = asyncio.create_task(start_prometheus_server())
 
     # Initialize the FunctionStream function
     function = FSFunction(
@@ -239,6 +243,10 @@ async def main():
     finally:
         await function.close()
         await agent_function.close()
+        if metrics_task and not metrics_task.done():
+            metrics_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await metrics_task
 
 
 if __name__ == "__main__":
